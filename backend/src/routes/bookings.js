@@ -10,6 +10,7 @@ const {
   getBookingById,
   assignCab,
   updateBookingStatus,
+  getBookingStats,
 } = require('../controllers/bookingController');
 const { authenticate, requireRole } = require('../middleware/auth');
 const validate = require('../middleware/validate');
@@ -39,6 +40,7 @@ router.put('/my/:id', authenticate, requireRole('customer'), updateMyBooking);
 router.patch('/my/:id/cancel', authenticate, requireRole('customer'), cancelBooking);
 
 // Admin routes
+router.get('/stats', authenticate, requireRole('admin'), getBookingStats);
 router.get('/', authenticate, requireRole('admin'), getAllBookings);
 router.get('/:id', authenticate, requireRole('admin'), getBookingById);
 

@@ -208,6 +208,58 @@ const updateBookingStatus = async (req, res) => {
   }
 };
 
+const getBookingStats = async (_req, res) => {
+  try {
+    const now = new Date();
+    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+
+    // Current month status counts
+    const currentMonthPipeline = [
+      { $match: { createdAt: { $gte: startOfMonth } } },
+      { $group: { _id: '$status', count: { $sum: 1 }, revenue: { $sum: '$totalAmount' } } },
+    ];
+    const currentRaw = await Booking.aggregate(currentMonthPipeline);
+
+    const currentMonth = { revenue: 0, completed: 0, confirmed: 0, pending: 0, cancelled: 0 };
+    for (const row of currentRaw) {
+      currentMonth[row._id] = row.count;
+      if (row._id === 'completed') currentMonth.revenue = row.revenue;
+    }
+
+    // Monthly breakdown (last 12 months, completed only)
+    const twelveMonthsAgo = new Date(now.getFullYear(), now.getMonth() - 11, 1);
+    const monthlyPipeline = [
+      { $match: { status: 'completed', createdAt: { $gte: twelveMonthsAgo } } },
+      {
+        $group: {
+          _id: { y: { $year: '$createdAt' }, m: { $month: '$createdAt' } },
+          revenue: { $sum: '$totalAmount' },
+          count: { $sum: 1 },
+        },
+      },
+      { $sort: { '_id.y': -1, '_id.m': -1 } },
+    ];
+    const monthlyRaw = await Booking.aggregate(monthlyPipeline);
+    const monthly = monthlyRaw.map((r) => ({
+      month: `${r._id.y}-${String(r._id.m).padStart(2, '0')}`,
+      revenue: r.revenue,
+      count: r.count,
+    }));
+
+    // All-time totals (completed only)
+    const allTimePipeline = [
+      { $match: { status: 'completed' } },
+      { $group: { _id: null, revenue: { $sum: '$totalAmount' }, count: { $sum: 1 } } },
+    ];
+    const allTimeRaw = await Booking.aggregate(allTimePipeline);
+    const allTime = allTimeRaw.length ? { revenue: allTimeRaw[0].revenue, count: allTimeRaw[0].count } : { revenue: 0, count: 0 };
+
+    res.json({ currentMonth, monthly, allTime });
+  } catch (err) {
+    res.status(500).json({ message: 'Server error', error: err.message });
+  }
+};
+
 module.exports = {
   createBooking,
   getMyBookings,
@@ -218,4 +270,5 @@ module.exports = {
   getBookingById,
   assignCab,
   updateBookingStatus,
+  getBookingStats,
 };
