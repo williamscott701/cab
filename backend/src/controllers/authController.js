@@ -1,6 +1,7 @@
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
+const Booking = require('../models/Booking');
 
 const signToken = (user) =>
   jwt.sign({ id: user._id, role: user.role }, process.env.JWT_SECRET, {
@@ -59,8 +60,24 @@ const logout = (_req, res) => {
 
 const deleteAccount = async (req, res) => {
   try {
-    await User.findByIdAndDelete(req.user._id);
-    res.json({ message: 'Account deleted' });
+    const userId = req.user._id;
+
+    // Cancel all pending or confirmed bookings so admin isn't left with ghost entries
+    const cancelResult = await Booking.updateMany(
+      { customerId: userId, status: { $in: ['pending', 'confirmed'] } },
+      { status: 'cancelled' }
+    );
+
+    // Delete all bookings belonging to this user
+    await Booking.deleteMany({ customerId: userId });
+
+    // Delete the user account
+    await User.findByIdAndDelete(userId);
+
+    res.json({
+      message: 'Account deleted',
+      bookingsCancelled: cancelResult.modifiedCount,
+    });
   } catch (err) {
     res.status(500).json({ message: 'Server error', error: err.message });
   }
