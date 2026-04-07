@@ -11,25 +11,32 @@ struct RouteListView: View {
         NavigationStack {
             Group {
                 if isLoading {
-                    ProgressView("Loading routes…")
+                    ProgressView()
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
                 } else if let errorMessage {
                     ContentUnavailableView(
-                        "Failed to load routes",
+                        "Couldn't Load Routes",
                         systemImage: "wifi.slash",
                         description: Text(errorMessage)
                     )
                 } else if routes.isEmpty {
-                    ContentUnavailableView("No Routes", systemImage: "map")
+                    ContentUnavailableView(
+                        "No Routes Yet",
+                        systemImage: "map",
+                        description: Text("Check back soon.")
+                    )
                 } else {
-                    List(routes) { route in
-                        RouteCard(route: route) {
-                            selectedRoute = route
+                    ScrollView {
+                        LazyVStack(spacing: 12) {
+                            ForEach(routes) { route in
+                                RouteCard(route: route) {
+                                    selectedRoute = route
+                                }
+                            }
                         }
-                        .listRowInsets(EdgeInsets(top: 6, leading: 16, bottom: 6, trailing: 16))
-                        .listRowSeparator(.hidden)
+                        .padding(.horizontal, 16)
+                        .padding(.vertical, 8)
                     }
-                    .listStyle(.plain)
                 }
             }
             .navigationTitle("Available Routes")
@@ -59,36 +66,83 @@ struct RouteCard: View {
     let route: Route
     let onBook: () -> Void
 
+    private var minPrice: Int? {
+        route.prices?.map(\.price).min().map { Int($0) }
+    }
+    private var maxPrice: Int? {
+        route.prices?.map(\.price).max().map { Int($0) }
+    }
+
     var body: some View {
-        VStack(alignment: .leading, spacing: 10) {
+        VStack(spacing: 0) {
+            // Top strip: route type badge
             HStack {
-                Text(route.displayRouteType)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
+                Label(route.displayRouteType, systemImage: "arrow.triangle.swap")
+                    .font(.caption.weight(.medium))
+                    .foregroundStyle(.tint)
+                    .padding(.horizontal, 10)
+                    .padding(.vertical, 5)
+                    .background(Color.accentColor.opacity(0.1))
+                    .clipShape(Capsule())
                 Spacer()
-            }
-
-            HStack(alignment: .center) {
-                VStack(alignment: .leading, spacing: 4) {
-                    Text(route.from).font(.headline)
-                    Image(systemName: "arrow.down").font(.caption).foregroundStyle(.secondary)
-                    Text(route.to).font(.headline)
+                if let lo = minPrice, let hi = maxPrice {
+                    Text("₹\(lo) – ₹\(hi)")
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(.secondary)
                 }
-                Spacer()
-                Button("Book", action: onBook)
-                    .buttonStyle(.borderedProminent)
             }
+            .padding(.horizontal, 16)
+            .padding(.top, 14)
+            .padding(.bottom, 12)
 
-            let prices = route.prices.map(\.price)
-            if let lo = prices.min(), let hi = prices.max() {
-                Text("From ₹\(Int(lo)) – ₹\(Int(hi))")
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
+            Divider().padding(.horizontal, 16)
+
+            // Route visual
+            HStack(alignment: .top, spacing: 12) {
+                // Timeline dots
+                VStack(spacing: 0) {
+                    Circle()
+                        .fill(.tint)
+                        .frame(width: 10, height: 10)
+                    Rectangle()
+                        .fill(Color.accentColor.opacity(0.3))
+                        .frame(width: 2)
+                        .frame(maxHeight: .infinity)
+                    Circle()
+                        .fill(Color(.systemGray3))
+                        .frame(width: 10, height: 10)
+                }
+                .padding(.top, 4)
+
+                VStack(alignment: .leading, spacing: 0) {
+                    Text(route.from)
+                        .font(.title3.weight(.semibold))
+                    Spacer().frame(height: 24)
+                    Text(route.to)
+                        .font(.title3.weight(.semibold))
+                        .foregroundStyle(.secondary)
+                }
+
+                Spacer()
+
+                Button {
+                    onBook()
+                } label: {
+                    Label("Book", systemImage: "arrow.right")
+                        .labelStyle(.titleAndIcon)
+                        .font(.subheadline.weight(.semibold))
+                        .padding(.horizontal, 16)
+                        .padding(.vertical, 10)
+                }
+                .buttonStyle(.borderedProminent)
+                .clipShape(RoundedRectangle(cornerRadius: 12))
             }
+            .padding(.horizontal, 16)
+            .padding(.vertical, 14)
         }
-        .padding()
-        .background(.background.secondary)
-        .clipShape(RoundedRectangle(cornerRadius: 12))
+        .background(.background)
+        .clipShape(RoundedRectangle(cornerRadius: 16))
+        .shadow(color: .black.opacity(0.07), radius: 10, y: 3)
     }
 }
 

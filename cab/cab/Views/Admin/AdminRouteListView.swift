@@ -12,39 +12,37 @@ struct AdminRouteListView: View {
         NavigationStack {
             Group {
                 if isLoading {
-                    ProgressView("Loading routes…")
+                    ProgressView()
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
                 } else if let errorMessage {
                     ContentUnavailableView(
-                        "Failed to load",
+                        "Couldn't Load",
                         systemImage: "wifi.slash",
                         description: Text(errorMessage)
                     )
                 } else if routes.isEmpty {
-                    ContentUnavailableView("No Routes", systemImage: "map",
-                                          description: Text("Tap + to add a route."))
+                    ContentUnavailableView(
+                        "No Routes Yet",
+                        systemImage: "map",
+                        description: Text("Tap + to add your first route.")
+                    )
                 } else {
                     List {
                         ForEach(routes) { route in
-                            VStack(alignment: .leading, spacing: 4) {
-                                Text("\(route.from) → \(route.to)").font(.headline)
-                                Text(route.displayRouteType)
-                                    .font(.caption)
-                                    .foregroundStyle(.secondary)
-                            }
-                            .swipeActions(edge: .trailing) {
-                                Button(role: .destructive) {
-                                    Task { await deleteRoute(route) }
-                                } label: {
-                                    Label("Delete", systemImage: "trash")
+                            AdminRouteRow(route: route)
+                                .swipeActions(edge: .trailing) {
+                                    Button(role: .destructive) {
+                                        Task { await deleteRoute(route) }
+                                    } label: {
+                                        Label("Delete", systemImage: "trash")
+                                    }
+                                    Button {
+                                        routeToEdit = route
+                                    } label: {
+                                        Label("Edit", systemImage: "pencil")
+                                    }
+                                    .tint(.blue)
                                 }
-                                Button {
-                                    routeToEdit = route
-                                } label: {
-                                    Label("Edit", systemImage: "pencil")
-                                }
-                                .tint(.blue)
-                            }
                         }
                     }
                 }
@@ -52,7 +50,12 @@ struct AdminRouteListView: View {
             .navigationTitle("Manage Routes")
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
-                    Button { showAddSheet = true } label: { Image(systemName: "plus") }
+                    Button {
+                        showAddSheet = true
+                    } label: {
+                        Image(systemName: "plus.circle.fill")
+                            .font(.title3)
+                    }
                 }
             }
             .task { await loadRoutes() }
@@ -84,6 +87,47 @@ struct AdminRouteListView: View {
         } catch {
             errorMessage = error.localizedDescription
         }
+    }
+}
+
+// MARK: - Admin Route Row
+
+struct AdminRouteRow: View {
+    let route: Route
+
+    private var priceRange: String {
+        let prices = route.prices.map(\.price)
+        guard let lo = prices.min(), let hi = prices.max() else { return "" }
+        return "₹\(Int(lo)) – ₹\(Int(hi))"
+    }
+
+    var body: some View {
+        HStack(spacing: 12) {
+            ZStack {
+                RoundedRectangle(cornerRadius: 10)
+                    .fill(Color.accentColor.opacity(0.12))
+                    .frame(width: 44, height: 44)
+                Image(systemName: "arrow.triangle.swap")
+                    .foregroundStyle(.tint)
+            }
+            VStack(alignment: .leading, spacing: 3) {
+                Text("\(route.from) → \(route.to)")
+                    .font(.headline)
+                HStack(spacing: 8) {
+                    Text(route.displayRouteType)
+                        .foregroundStyle(.secondary)
+                    if !priceRange.isEmpty {
+                        Text("·")
+                            .foregroundStyle(.secondary)
+                        Text(priceRange)
+                            .foregroundStyle(.tint)
+                            .fontWeight(.medium)
+                    }
+                }
+                .font(.caption)
+            }
+        }
+        .padding(.vertical, 4)
     }
 }
 

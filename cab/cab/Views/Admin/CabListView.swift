@@ -12,17 +12,20 @@ struct CabListView: View {
         NavigationStack {
             Group {
                 if isLoading {
-                    ProgressView("Loading cabs…")
+                    ProgressView()
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
                 } else if let errorMessage {
                     ContentUnavailableView(
-                        "Failed to load",
+                        "Couldn't Load",
                         systemImage: "wifi.slash",
                         description: Text(errorMessage)
                     )
                 } else if cabs.isEmpty {
-                    ContentUnavailableView("No Cabs", systemImage: "car.fill",
-                                          description: Text("Tap + to add a cab."))
+                    ContentUnavailableView(
+                        "No Cabs Yet",
+                        systemImage: "car.fill",
+                        description: Text("Tap + to add your first cab.")
+                    )
                 } else {
                     List {
                         ForEach(cabs) { cab in
@@ -50,7 +53,8 @@ struct CabListView: View {
                     Button {
                         showAddSheet = true
                     } label: {
-                        Image(systemName: "plus")
+                        Image(systemName: "plus.circle.fill")
+                            .font(.title3)
                     }
                 }
             }

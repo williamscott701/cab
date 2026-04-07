@@ -20,7 +20,7 @@ const signup = async (req, res) => {
     const token = signToken(user);
     res.status(201).json({
       token,
-      user: { id: user._id, name: user.name, email: user.email, phone: user.phone, role: user.role },
+      user: { _id: user._id, name: user.name, email: user.email, phone: user.phone, role: user.role },
     });
   } catch (err) {
     res.status(500).json({ message: 'Server error', error: err.message });
@@ -40,7 +40,7 @@ const login = async (req, res) => {
     const token = signToken(user);
     res.json({
       token,
-      user: { id: user._id, name: user.name, email: user.email, phone: user.phone, role: user.role },
+      user: { _id: user._id, name: user.name, email: user.email, phone: user.phone, role: user.role },
     });
   } catch (err) {
     res.status(500).json({ message: 'Server error', error: err.message });
@@ -49,7 +49,7 @@ const login = async (req, res) => {
 
 const getMe = (req, res) => {
   const u = req.user;
-  res.json({ id: u._id, name: u.name, email: u.email, phone: u.phone, role: u.role });
+  res.json({ _id: u._id, name: u.name, email: u.email, phone: u.phone, role: u.role });
 };
 
 const logout = (_req, res) => {

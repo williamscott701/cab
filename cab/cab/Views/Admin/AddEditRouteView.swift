@@ -85,7 +85,7 @@ struct AddEditRouteView: View {
         routeType = route.routeType
         // Merge existing prices into the editable list
         prices = Self.defaultPrices().map { entry in
-            if let existing = route.prices.first(where: { $0.seaterCapacity == entry.seaterCapacity && $0.isCNG == entry.isCNG }) {
+            if let existing = route.prices?.first(where: { $0.seaterCapacity == entry.seaterCapacity && $0.isCNG == entry.isCNG }) {
                 return EditablePriceEntry(seaterCapacity: existing.seaterCapacity, isCNG: existing.isCNG, price: existing.price)
             }
             return entry

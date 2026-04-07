@@ -13,77 +13,110 @@ struct SignupView: View {
     @State private var errorMessage: String?
 
     var body: some View {
-        ScrollView {
-            VStack(spacing: 20) {
-                VStack(spacing: 8) {
-                    Image(systemName: "person.badge.plus")
-                        .font(.system(size: 48))
-                        .foregroundStyle(.tint)
-                    Text("Create Account")
-                        .font(.title.bold())
-                }
-                .padding(.top, 32)
+        ZStack {
+            LinearGradient(
+                colors: [Color.accentColor.opacity(0.10), Color(.systemBackground)],
+                startPoint: .top,
+                endPoint: .center
+            )
+            .ignoresSafeArea()
 
-                VStack(spacing: 14) {
-                    TextField("Full Name", text: $name)
-                        .textContentType(.name)
-                        .textFieldStyle(.roundedBorder)
-
-                    TextField("Email", text: $email)
-                        .keyboardType(.emailAddress)
-                        .textContentType(.emailAddress)
-                        .textInputAutocapitalization(.never)
-                        .autocorrectionDisabled()
-                        .textFieldStyle(.roundedBorder)
-
-                    TextField("Phone", text: $phone)
-                        .keyboardType(.phonePad)
-                        .textContentType(.telephoneNumber)
-                        .textFieldStyle(.roundedBorder)
-
-                    SecureField("Password", text: $password)
-                        .textContentType(.newPassword)
-                        .textFieldStyle(.roundedBorder)
-                }
-                .padding(.horizontal)
-
-                if let errorMessage {
-                    Text(errorMessage)
-                        .foregroundStyle(.red)
-                        .font(.callout)
-                        .multilineTextAlignment(.center)
-                        .padding(.horizontal)
-                }
-
-                Button {
-                    Task { await signup() }
-                } label: {
-                    Group {
-                        if isLoading {
-                            ProgressView().tint(.white)
-                        } else {
-                            Text("Sign Up").fontWeight(.semibold)
+            ScrollView {
+                VStack(spacing: 0) {
+                    // Hero
+                    VStack(spacing: 12) {
+                        ZStack {
+                            Circle()
+                                .fill(Color.accentColor.opacity(0.15))
+                                .frame(width: 80, height: 80)
+                            Image(systemName: "person.badge.plus")
+                                .font(.system(size: 34, weight: .medium))
+                                .foregroundStyle(.tint)
                         }
+                        Text("Create Account")
+                            .font(.system(size: 28, weight: .bold, design: .rounded))
+                        Text("Join thousands of happy riders")
+                            .font(.subheadline)
+                            .foregroundStyle(.secondary)
                     }
-                    .frame(maxWidth: .infinity)
-                    .frame(height: 48)
-                }
-                .buttonStyle(.borderedProminent)
-                .disabled(isLoading || name.isEmpty || email.isEmpty || phone.isEmpty || password.isEmpty)
-                .padding(.horizontal)
+                    .padding(.top, 32)
+                    .padding(.bottom, 36)
 
-                Button("Already have an account? Log In") {
-                    dismiss()
+                    // Form card
+                    VStack(spacing: 14) {
+                        AuthField(icon: "person.fill", placeholder: "Full name", text: $name)
+                            .textContentType(.name)
+
+                        AuthField(icon: "envelope.fill", placeholder: "Email address", text: $email)
+                            .keyboardType(.emailAddress)
+                            .textInputAutocapitalization(.never)
+                            .autocorrectionDisabled()
+                            .textContentType(.emailAddress)
+
+                        AuthField(icon: "phone.fill", placeholder: "Phone number", text: $phone)
+                            .keyboardType(.phonePad)
+                            .textContentType(.telephoneNumber)
+
+                        AuthField(icon: "lock.fill", placeholder: "Password (min. 6 chars)", text: $password, isSecure: true)
+                            .textContentType(.newPassword)
+
+                        if let errorMessage {
+                            HStack(spacing: 8) {
+                                Image(systemName: "exclamationmark.circle.fill")
+                                Text(errorMessage)
+                                    .font(.callout)
+                            }
+                            .foregroundStyle(.red)
+                            .padding(12)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .background(Color.red.opacity(0.08))
+                            .clipShape(RoundedRectangle(cornerRadius: 10))
+                        }
+
+                        Button {
+                            Task { await signup() }
+                        } label: {
+                            ZStack {
+                                if isLoading {
+                                    ProgressView().tint(.white)
+                                } else {
+                                    Text("Create Account")
+                                        .fontWeight(.semibold)
+                                }
+                            }
+                            .frame(maxWidth: .infinity)
+                            .frame(height: 52)
+                        }
+                        .buttonStyle(.borderedProminent)
+                        .disabled(isLoading || name.isEmpty || email.isEmpty || phone.isEmpty || password.count < 6)
+                        .clipShape(RoundedRectangle(cornerRadius: 14))
+                    }
+                    .padding(20)
+                    .background(.background)
+                    .clipShape(RoundedRectangle(cornerRadius: 20))
+                    .shadow(color: .black.opacity(0.07), radius: 16, y: 4)
+                    .padding(.horizontal, 20)
+
+                    Button {
+                        dismiss()
+                    } label: {
+                        HStack(spacing: 4) {
+                            Text("Already have an account?")
+                                .foregroundStyle(.secondary)
+                            Text("Log in")
+                                .fontWeight(.semibold)
+                                .foregroundStyle(.tint)
+                        }
+                        .font(.callout)
+                    }
+                    .padding(.top, 24)
+                    .padding(.bottom, 40)
                 }
-                .font(.callout)
-                .padding(.bottom, 24)
             }
         }
-        .navigationTitle("Sign Up")
+        .navigationTitle("")
         .navigationBarTitleDisplayMode(.inline)
     }
-
-    // MARK: - Action
 
     private func signup() async {
         isLoading = true

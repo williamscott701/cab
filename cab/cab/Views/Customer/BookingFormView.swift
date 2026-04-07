@@ -21,10 +21,6 @@ struct BookingFormView: View {
         route.price(forSeater: selectedSeater, isCNG: prefersCNG)
     }
 
-    private var priceText: String {
-        calculatedPrice.map { "₹\(Int($0))" } ?? "Not available"
-    }
-
     private let dateFormatter: DateFormatter = {
         let f = DateFormatter()
         f.dateFormat = "yyyy-MM-dd"
@@ -33,88 +29,182 @@ struct BookingFormView: View {
 
     var body: some View {
         NavigationStack {
-            Form {
-                Section("Route") {
-                    HStack {
-                        VStack(alignment: .leading, spacing: 4) {
-                            Text(route.from).fontWeight(.semibold)
-                            Image(systemName: "arrow.down").foregroundStyle(.secondary)
-                            Text(route.to).fontWeight(.semibold)
+            ScrollView {
+                VStack(spacing: 16) {
+                    // Route summary header
+                    routeSummaryCard
+
+                    // Price banner
+                    priceBanner
+
+                    // Travel details
+                    FormSection(title: "Travel Details", icon: "calendar") {
+                        DatePicker(
+                            "Date",
+                            selection: $travelDate,
+                            in: Date.now...,
+                            displayedComponents: .date
+                        )
+                        Divider()
+                        Stepper {
+                            HStack {
+                                Image(systemName: "person.2.fill")
+                                    .foregroundStyle(.secondary)
+                                Text("Passengers")
+                                Spacer()
+                                Text("\(numberOfPeople)")
+                                    .fontWeight(.semibold)
+                                    .foregroundStyle(.tint)
+                            }
+                        } onIncrement: {
+                            if numberOfPeople < 7 { numberOfPeople += 1 }
+                        } onDecrement: {
+                            if numberOfPeople > 1 { numberOfPeople -= 1 }
                         }
-                        Spacer()
-                        Text(route.displayRouteType)
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
                     }
-                }
 
-                Section("Travel Details") {
-                    DatePicker(
-                        "Travel Date",
-                        selection: $travelDate,
-                        in: Date.now...,
-                        displayedComponents: .date
-                    )
-                    Stepper("Passengers: \(numberOfPeople)", value: $numberOfPeople, in: 1...7)
-                }
-
-                Section("Cab Preference") {
-                    Picker("Seater Capacity", selection: $selectedSeater) {
-                        ForEach(seaterOptions, id: \.self) { seats in
-                            Text("\(seats)-Seater").tag(seats)
+                    // Cab preference
+                    FormSection(title: "Cab Preference", icon: "car.fill") {
+                        VStack(alignment: .leading, spacing: 10) {
+                            Text("Seater Capacity")
+                                .font(.subheadline)
+                                .foregroundStyle(.secondary)
+                            HStack(spacing: 8) {
+                                ForEach(seaterOptions, id: \.self) { seats in
+                                    SeaterButton(
+                                        seats: seats,
+                                        isSelected: selectedSeater == seats,
+                                        action: { selectedSeater = seats }
+                                    )
+                                }
+                            }
+                        }
+                        Divider()
+                        HStack {
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text("CNG Vehicle")
+                                    .font(.subheadline)
+                                Text("Eco-friendly · lower cost")
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                            }
+                            Spacer()
+                            Toggle("", isOn: $prefersCNG)
+                                .labelsHidden()
                         }
                     }
-                    .pickerStyle(.segmented)
 
-                    Toggle("CNG Cab", isOn: $prefersCNG)
-                }
-
-                Section("Estimated Price") {
-                    HStack {
-                        Text("Total")
-                        Spacer()
-                        Text(priceText)
-                            .fontWeight(.semibold)
-                            .foregroundStyle(calculatedPrice == nil ? .secondary : .primary)
+                    // Notes
+                    FormSection(title: "Notes", icon: "text.bubble") {
+                        TextField("Any special requests… (optional)", text: $customerNotes, axis: .vertical)
+                            .lineLimit(3...)
                     }
-                }
 
-                Section("Notes (optional)") {
-                    TextField("Any special requests…", text: $customerNotes, axis: .vertical)
-                        .lineLimit(3...)
-                }
-
-                if let errorMessage {
-                    Section {
-                        Text(errorMessage)
-                            .foregroundStyle(.red)
-                            .font(.callout)
+                    // Error
+                    if let errorMessage {
+                        HStack(spacing: 8) {
+                            Image(systemName: "exclamationmark.circle.fill")
+                            Text(errorMessage).font(.callout)
+                        }
+                        .foregroundStyle(.red)
+                        .padding(14)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .background(Color.red.opacity(0.08))
+                        .clipShape(RoundedRectangle(cornerRadius: 12))
                     }
+
+                    // Confirm button
+                    Button {
+                        Task { await submitBooking() }
+                    } label: {
+                        ZStack {
+                            if isSubmitting {
+                                ProgressView().tint(.white)
+                            } else {
+                                Label("Confirm Booking", systemImage: "checkmark.circle.fill")
+                                    .fontWeight(.semibold)
+                            }
+                        }
+                        .frame(maxWidth: .infinity)
+                        .frame(height: 52)
+                    }
+                    .buttonStyle(.borderedProminent)
+                    .disabled(calculatedPrice == nil || isSubmitting)
+                    .clipShape(RoundedRectangle(cornerRadius: 14))
                 }
+                .padding(.horizontal, 16)
+                .padding(.bottom, 32)
             }
+            .background(Color(.systemGroupedBackground))
             .navigationTitle("Book a Cab")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Cancel") { dismiss() }
                 }
-                ToolbarItem(placement: .confirmationAction) {
-                    if isSubmitting {
-                        ProgressView()
-                    } else {
-                        Button("Confirm") {
-                            Task { await submitBooking() }
-                        }
-                        .disabled(calculatedPrice == nil || isSubmitting)
-                    }
-                }
             }
-            .alert("Booking Confirmed!", isPresented: $didSubmit) {
+            .alert("Booking Submitted!", isPresented: $didSubmit) {
                 Button("Done") { dismiss() }
             } message: {
                 Text("Your booking is pending. We'll assign a cab shortly.")
             }
         }
+    }
+
+    // MARK: - Sub-views
+
+    private var routeSummaryCard: some View {
+        HStack(spacing: 12) {
+            VStack(spacing: 0) {
+                Circle().fill(.tint).frame(width: 8, height: 8)
+                Rectangle().fill(Color.accentColor.opacity(0.3)).frame(width: 2).frame(maxHeight: .infinity)
+                Circle().fill(Color(.systemGray3)).frame(width: 8, height: 8)
+            }
+            .padding(.vertical, 4)
+            VStack(alignment: .leading, spacing: 12) {
+                Text(route.from).font(.headline)
+                Text(route.to).font(.headline).foregroundStyle(.secondary)
+            }
+            Spacer()
+            Text(route.displayRouteType)
+                .font(.caption.weight(.medium))
+                .foregroundStyle(.tint)
+                .padding(.horizontal, 10)
+                .padding(.vertical, 5)
+                .background(Color.accentColor.opacity(0.1))
+                .clipShape(Capsule())
+        }
+        .padding(16)
+        .background(.background)
+        .clipShape(RoundedRectangle(cornerRadius: 16))
+        .shadow(color: .black.opacity(0.06), radius: 8, y: 2)
+        .padding(.top, 8)
+    }
+
+    private var priceBanner: some View {
+        HStack {
+            VStack(alignment: .leading, spacing: 2) {
+                Text("Estimated Total")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                if let price = calculatedPrice {
+                    Text("₹\(Int(price))")
+                        .font(.system(size: 32, weight: .bold, design: .rounded))
+                        .foregroundStyle(.tint)
+                } else {
+                    Text("Not available")
+                        .font(.title2.bold())
+                        .foregroundStyle(.secondary)
+                }
+            }
+            Spacer()
+            Image(systemName: "indianrupeesign.circle.fill")
+                .font(.system(size: 44))
+                .foregroundStyle(.tint.opacity(0.2))
+        }
+        .padding(16)
+        .background(Color.accentColor.opacity(0.07))
+        .clipShape(RoundedRectangle(cornerRadius: 16))
     }
 
     // MARK: - Action
@@ -132,15 +222,60 @@ struct BookingFormView: View {
                 prefersCNG: prefersCNG,
                 customerNotes: customerNotes.isEmpty ? nil : customerNotes
             )
-            let _: Booking = try await APIClient.shared.perform(
-                "/api/bookings",
-                method: "POST",
-                body: body
-            )
+            let _: Booking = try await APIClient.shared.perform("/api/bookings", method: "POST", body: body)
             didSubmit = true
         } catch {
             errorMessage = error.localizedDescription
         }
+    }
+}
+
+// MARK: - Helpers
+
+struct FormSection<Content: View>: View {
+    let title: String
+    let icon: String
+    @ViewBuilder let content: Content
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Label(title, systemImage: icon)
+                .font(.subheadline.weight(.semibold))
+                .foregroundStyle(.secondary)
+                .padding(.horizontal, 4)
+            VStack(spacing: 12) {
+                content
+            }
+            .padding(16)
+            .background(.background)
+            .clipShape(RoundedRectangle(cornerRadius: 14))
+        }
+    }
+}
+
+struct SeaterButton: View {
+    let seats: Int
+    let isSelected: Bool
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            VStack(spacing: 4) {
+                Image(systemName: "person.fill")
+                    .font(.caption)
+                Text("\(seats)")
+                    .font(.headline.bold())
+                Text("Seater")
+                    .font(.caption2)
+            }
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, 10)
+            .background(isSelected ? Color.accentColor : Color(.secondarySystemBackground))
+            .foregroundStyle(isSelected ? .white : .primary)
+            .clipShape(RoundedRectangle(cornerRadius: 10))
+        }
+        .buttonStyle(.plain)
+        .animation(.spring(response: 0.2), value: isSelected)
     }
 }
 

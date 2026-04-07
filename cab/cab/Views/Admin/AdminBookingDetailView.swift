@@ -14,54 +14,55 @@ struct AdminBookingDetailView: View {
     var body: some View {
         Group {
             if isLoading {
-                ProgressView("Loading…")
+                ProgressView()
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
             } else if let errorMessage {
                 ContentUnavailableView(
-                    "Failed to load",
+                    "Couldn't Load",
                     systemImage: "wifi.slash",
                     description: Text(errorMessage)
                 )
             } else if let booking {
                 ScrollView {
                     VStack(spacing: 16) {
-                        HStack {
-                            Spacer()
-                            StatusBadge(status: booking.statusEnum)
-                            Spacer()
-                        }
 
-                        // Customer info
+                        StatusHero(status: booking.statusEnum, amount: booking.totalAmount)
+
+                        // Customer
                         if let user = booking.customer {
-                            InfoCard(title: "Customer") {
+                            InfoCard(title: "Customer", icon: "person.fill") {
                                 LabeledValue(label: "Name", value: user.name)
+                                Divider()
                                 LabeledValue(label: "Phone", value: user.phone)
+                                Divider()
                                 LabeledValue(label: "Email", value: user.email)
                             }
                         }
 
-                        // Route info
+                        // Route
                         if let route = booking.route {
-                            InfoCard(title: "Route") {
-                                LabeledValue(label: "From", value: route.from)
-                                LabeledValue(label: "To", value: route.to)
+                            InfoCard(title: "Route", icon: "map.fill") {
+                                RouteTimeline(from: route.from, to: route.to)
+                                Divider()
                                 LabeledValue(label: "Type", value: route.displayRouteType)
                             }
                         }
 
                         // Trip details
-                        InfoCard(title: "Trip Details") {
+                        InfoCard(title: "Trip Details", icon: "suitcase.fill") {
                             LabeledValue(label: "Travel Date", value: booking.travelDate)
+                            Divider()
                             LabeledValue(label: "Passengers", value: "\(booking.numberOfPeople)")
-                            LabeledValue(label: "Seater", value: "\(booking.preferredSeater)-Seater")
+                            Divider()
+                            LabeledValue(label: "Cab Size", value: "\(booking.preferredSeater)-Seater")
+                            Divider()
                             LabeledValue(label: "CNG", value: booking.prefersCNG ? "Yes" : "No")
-                            LabeledValue(label: "Amount", value: "₹\(Int(booking.totalAmount))")
                         }
 
                         if let notes = booking.customerNotes, !notes.isEmpty {
-                            InfoCard(title: "Customer Notes") {
+                            InfoCard(title: "Customer Notes", icon: "text.bubble.fill") {
                                 Text(notes)
-                                    .font(.body)
+                                    .font(.subheadline)
                                     .foregroundStyle(.secondary)
                                     .frame(maxWidth: .infinity, alignment: .leading)
                             }
@@ -69,71 +70,39 @@ struct AdminBookingDetailView: View {
 
                         // Assigned cab
                         if let cab = booking.assignedCab {
-                            InfoCard(title: "Assigned Cab") {
+                            InfoCard(title: "Assigned Cab", icon: "car.fill") {
                                 LabeledValue(label: "Driver", value: cab.driverName)
+                                Divider()
                                 LabeledValue(label: "Phone", value: cab.driverPhone)
+                                Divider()
                                 LabeledValue(label: "Vehicle", value: cab.vehicleModel)
+                                Divider()
                                 LabeledValue(label: "Plate", value: cab.licensePlate)
+                                Divider()
                                 LabeledValue(label: "Color", value: cab.color)
                             }
                         }
 
-                        // Assign button — only when pending
-                        if booking.statusEnum == .pending {
-                            Button {
-                                showAssignSheet = true
-                            } label: {
-                                Label("Assign Cab", systemImage: "car.badge.plus")
-                                    .frame(maxWidth: .infinity)
-                                    .frame(height: 48)
+                        if let errorMessage {
+                            HStack(spacing: 8) {
+                                Image(systemName: "exclamationmark.circle.fill")
+                                Text(errorMessage).font(.callout)
                             }
-                            .buttonStyle(.borderedProminent)
-                            .padding(.horizontal)
+                            .foregroundStyle(.red)
+                            .padding(12)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .background(Color.red.opacity(0.08))
+                            .clipShape(RoundedRectangle(cornerRadius: 12))
                         }
 
-                        // Status update — confirmed → completed or cancelled
-                        if booking.statusEnum == .confirmed {
-                            HStack(spacing: 12) {
-                                Button {
-                                    Task { await updateStatus("completed") }
-                                } label: {
-                                    Label("Complete", systemImage: "checkmark.circle")
-                                        .frame(maxWidth: .infinity)
-                                }
-                                .buttonStyle(.borderedProminent)
-                                .tint(.green)
-                                .disabled(isUpdating)
-
-                                Button {
-                                    Task { await updateStatus("cancelled") }
-                                } label: {
-                                    Label("Cancel", systemImage: "xmark.circle")
-                                        .frame(maxWidth: .infinity)
-                                }
-                                .buttonStyle(.borderedProminent)
-                                .tint(.red)
-                                .disabled(isUpdating)
-                            }
-                            .padding(.horizontal)
-                        }
-
-                        // Allow cancellation from pending too
-                        if booking.statusEnum == .pending {
-                            Button {
-                                Task { await updateStatus("cancelled") }
-                            } label: {
-                                Label("Cancel Booking", systemImage: "xmark.circle")
-                                    .frame(maxWidth: .infinity)
-                                    .frame(height: 44)
-                            }
-                            .buttonStyle(.bordered)
-                            .tint(.red)
-                            .padding(.horizontal)
-                            .disabled(isUpdating)
-                        }
+                        // Actions
+                        actionsSection(booking: booking)
                     }
-                    .padding()
+                    .padding(.horizontal, 16)
+                    .padding(.vertical, 8)
+                    .padding(.bottom, 32)
                 }
+                .background(Color(.systemGroupedBackground))
             }
         }
         .navigationTitle("Booking Detail")
@@ -145,6 +114,68 @@ struct AdminBookingDetailView: View {
                     showAssignSheet = false
                     Task { await loadBooking() }
                     onUpdate?()
+                }
+            }
+        }
+    }
+
+    @ViewBuilder
+    private func actionsSection(booking: Booking) -> some View {
+        VStack(spacing: 10) {
+            if booking.statusEnum == .pending {
+                Button {
+                    showAssignSheet = true
+                } label: {
+                    Label("Assign a Cab", systemImage: "car.badge.plus")
+                        .fontWeight(.semibold)
+                        .frame(maxWidth: .infinity)
+                        .frame(height: 50)
+                }
+                .buttonStyle(.borderedProminent)
+                .clipShape(RoundedRectangle(cornerRadius: 14))
+                .disabled(isUpdating)
+
+                Button {
+                    Task { await updateStatus("cancelled") }
+                } label: {
+                    Label("Cancel Booking", systemImage: "xmark.circle")
+                        .fontWeight(.semibold)
+                        .frame(maxWidth: .infinity)
+                        .frame(height: 50)
+                }
+                .buttonStyle(.bordered)
+                .tint(.red)
+                .clipShape(RoundedRectangle(cornerRadius: 14))
+                .disabled(isUpdating)
+            }
+
+            if booking.statusEnum == .confirmed {
+                HStack(spacing: 10) {
+                    Button {
+                        Task { await updateStatus("completed") }
+                    } label: {
+                        Label("Complete", systemImage: "checkmark.circle.fill")
+                            .fontWeight(.semibold)
+                            .frame(maxWidth: .infinity)
+                            .frame(height: 50)
+                    }
+                    .buttonStyle(.borderedProminent)
+                    .tint(.green)
+                    .clipShape(RoundedRectangle(cornerRadius: 14))
+                    .disabled(isUpdating)
+
+                    Button {
+                        Task { await updateStatus("cancelled") }
+                    } label: {
+                        Label("Cancel", systemImage: "xmark.circle.fill")
+                            .fontWeight(.semibold)
+                            .frame(maxWidth: .infinity)
+                            .frame(height: 50)
+                    }
+                    .buttonStyle(.borderedProminent)
+                    .tint(.red)
+                    .clipShape(RoundedRectangle(cornerRadius: 14))
+                    .disabled(isUpdating)
                 }
             }
         }

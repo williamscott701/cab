@@ -29,7 +29,7 @@ final class AuthManager {
     func login(token: String, user: User) {
         KeychainManager.saveToken(token)
         isLoggedIn = true
-        role = user.role
+        role = user.role ?? AuthManager.decodeJWTPayload(token)?["role"] as? String
         currentUser = user
     }
 
@@ -46,7 +46,7 @@ final class AuthManager {
     func loadCurrentUser() async throws {
         let user: User = try await APIClient.shared.perform("/api/auth/me")
         currentUser = user
-        role = user.role
+        if let r = user.role { role = r }
     }
 
     // MARK: - Private

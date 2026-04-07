@@ -11,7 +11,7 @@ struct Route: Codable, Identifiable {
     let from: String
     let to: String
     let routeType: String
-    let prices: [PriceEntry]
+    let prices: [PriceEntry]?
 
     enum CodingKeys: String, CodingKey {
         case id = "_id"
@@ -20,7 +20,7 @@ struct Route: Codable, Identifiable {
 
     /// Returns the price matching the given seater capacity and CNG preference, or nil.
     func price(forSeater seater: Int, isCNG: Bool) -> Double? {
-        prices.first { $0.seaterCapacity == seater && $0.isCNG == isCNG }?.price
+        prices?.first { $0.seaterCapacity == seater && $0.isCNG == isCNG }?.price
     }
 
     var displayRouteType: String {

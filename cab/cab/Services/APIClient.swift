@@ -49,17 +49,8 @@ actor APIClient {
         return URLSession(configuration: cfg)
     }()
 
-    private let encoder: JSONEncoder = {
-        let enc = JSONEncoder()
-        enc.keyEncodingStrategy = .convertToSnakeCase
-        return enc
-    }()
-
-    private let decoder: JSONDecoder = {
-        let dec = JSONDecoder()
-        dec.keyDecodingStrategy = .convertFromSnakeCase
-        return dec
-    }()
+    private let encoder: JSONEncoder = JSONEncoder()
+    private let decoder: JSONDecoder = JSONDecoder()
 
     private init() {}
 
@@ -130,7 +121,8 @@ actor APIClient {
         }
         if http.statusCode == 401 { throw APIError.unauthorized }
         guard (200..<300).contains(http.statusCode) else {
-            let message = (try? JSONDecoder().decode([String: String].self, from: data))?["message"]
+            struct ErrorBody: Decodable { let message: String? }
+            let message = (try? JSONDecoder().decode(ErrorBody.self, from: data))?.message
                 ?? HTTPURLResponse.localizedString(forStatusCode: http.statusCode)
             throw APIError.serverError(http.statusCode, message)
         }

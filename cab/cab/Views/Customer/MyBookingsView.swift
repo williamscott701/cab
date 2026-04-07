@@ -10,27 +10,34 @@ struct MyBookingsView: View {
         NavigationStack {
             Group {
                 if isLoading {
-                    ProgressView("Loading bookings…")
+                    ProgressView()
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
                 } else if let errorMessage {
                     ContentUnavailableView(
-                        "Failed to load",
+                        "Couldn't Load",
                         systemImage: "wifi.slash",
                         description: Text(errorMessage)
                     )
                 } else if bookings.isEmpty {
                     ContentUnavailableView(
-                        "No Bookings",
-                        systemImage: "list.bullet.clipboard",
-                        description: Text("Your bookings will appear here.")
+                        "No Bookings Yet",
+                        systemImage: "ticket",
+                        description: Text("Book your first ride from the Routes tab.")
                     )
                 } else {
-                    List(bookings) { booking in
-                        NavigationLink {
-                            BookingDetailView(bookingId: booking.id)
-                        } label: {
-                            BookingRow(booking: booking)
+                    ScrollView {
+                        LazyVStack(spacing: 12) {
+                            ForEach(bookings) { booking in
+                                NavigationLink {
+                                    BookingDetailView(bookingId: booking.id)
+                                } label: {
+                                    BookingRow(booking: booking)
+                                }
+                                .buttonStyle(.plain)
+                            }
                         }
+                        .padding(.horizontal, 16)
+                        .padding(.vertical, 8)
                     }
                 }
             }
@@ -52,35 +59,77 @@ struct MyBookingsView: View {
     }
 }
 
-// MARK: - Booking Row
+// MARK: - Booking Row Card
 
 struct BookingRow: View {
     let booking: Booking
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 6) {
+        VStack(spacing: 0) {
+            // Status strip
             HStack {
-                if let route = booking.route {
-                    Text("\(route.from) → \(route.to)")
-                        .font(.headline)
-                } else {
-                    Text("Booking")
-                        .font(.headline)
-                }
-                Spacer()
                 StatusBadge(status: booking.statusEnum)
-            }
-
-            HStack {
-                Label(booking.travelDate, systemImage: "calendar")
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
                 Spacer()
                 Text("₹\(Int(booking.totalAmount))")
-                    .font(.subheadline.bold())
+                    .font(.headline.bold())
+                    .foregroundStyle(.primary)
             }
+            .padding(.horizontal, 16)
+            .padding(.top, 14)
+            .padding(.bottom, 10)
+
+            Divider().padding(.horizontal, 16)
+
+            // Route
+            HStack(spacing: 12) {
+                VStack(spacing: 0) {
+                    Circle().fill(.tint).frame(width: 7, height: 7)
+                    Rectangle().fill(Color.accentColor.opacity(0.3)).frame(width: 1.5).frame(maxHeight: .infinity)
+                    Circle().fill(Color(.systemGray3)).frame(width: 7, height: 7)
+                }
+                .padding(.vertical, 3)
+
+                if let route = booking.route {
+                    VStack(alignment: .leading, spacing: 10) {
+                        Text(route.from)
+                            .font(.subheadline.weight(.semibold))
+                        Text(route.to)
+                            .font(.subheadline)
+                            .foregroundStyle(.secondary)
+                    }
+                } else {
+                    Text("Route details loading…")
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                }
+
+                Spacer()
+
+                Image(systemName: "chevron.right")
+                    .font(.caption.bold())
+                    .foregroundStyle(.tertiary)
+            }
+            .padding(.horizontal, 16)
+            .padding(.vertical, 12)
+
+            // Meta row
+            HStack(spacing: 16) {
+                Label(booking.travelDate, systemImage: "calendar")
+                Label("\(booking.preferredSeater)-Seater", systemImage: "person.2.fill")
+                if booking.prefersCNG {
+                    Label("CNG", systemImage: "leaf.fill")
+                        .foregroundStyle(.green)
+                }
+            }
+            .font(.caption)
+            .foregroundStyle(.secondary)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(.horizontal, 16)
+            .padding(.bottom, 14)
         }
-        .padding(.vertical, 4)
+        .background(.background)
+        .clipShape(RoundedRectangle(cornerRadius: 16))
+        .shadow(color: .black.opacity(0.06), radius: 8, y: 2)
     }
 }
 
@@ -98,12 +147,21 @@ struct StatusBadge: View {
         }
     }
 
+    var icon: String {
+        switch status {
+        case .pending:   return "clock.fill"
+        case .confirmed: return "checkmark.circle.fill"
+        case .completed: return "flag.checkered"
+        case .cancelled: return "xmark.circle.fill"
+        }
+    }
+
     var body: some View {
-        Text(status.displayName)
+        Label(status.displayName, systemImage: icon)
             .font(.caption.bold())
-            .padding(.horizontal, 8)
-            .padding(.vertical, 3)
-            .background(color.opacity(0.15))
+            .padding(.horizontal, 9)
+            .padding(.vertical, 4)
+            .background(color.opacity(0.13))
             .foregroundStyle(color)
             .clipShape(Capsule())
     }

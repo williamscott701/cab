@@ -16,42 +16,62 @@ struct AllBookingsView: View {
 
     var body: some View {
         NavigationStack {
-            Group {
-                if isLoading {
-                    ProgressView("Loading…")
-                        .frame(maxWidth: .infinity, maxHeight: .infinity)
-                } else if let errorMessage {
-                    ContentUnavailableView(
-                        "Failed to load",
-                        systemImage: "wifi.slash",
-                        description: Text(errorMessage)
-                    )
-                } else if filtered.isEmpty {
-                    ContentUnavailableView("No Bookings", systemImage: "list.clipboard")
-                } else {
-                    List(filtered) { booking in
-                        NavigationLink {
-                            AdminBookingDetailView(bookingId: booking.id, onUpdate: {
-                                Task { await loadBookings() }
-                            })
-                        } label: {
-                            AdminBookingRow(booking: booking)
-                        }
-                    }
-                }
-            }
-            .navigationTitle("All Bookings")
-            .toolbar {
-                ToolbarItem(placement: .topBarTrailing) {
-                    Menu {
+            VStack(spacing: 0) {
+                // Filter chips
+                ScrollView(.horizontal, showsIndicators: false) {
+                    HStack(spacing: 8) {
                         ForEach(filters, id: \.self) { f in
-                            Button(f.capitalized) { statusFilter = f }
+                            FilterChip(label: f.capitalized, isSelected: statusFilter == f) {
+                                statusFilter = f
+                                Task { await loadBookings() }
+                            }
                         }
-                    } label: {
-                        Label("Filter", systemImage: "line.3.horizontal.decrease.circle")
+                    }
+                    .padding(.horizontal, 16)
+                    .padding(.vertical, 10)
+                }
+
+                Divider()
+
+                Group {
+                    if isLoading {
+                        ProgressView()
+                            .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    } else if let errorMessage {
+                        ContentUnavailableView(
+                            "Couldn't Load",
+                            systemImage: "wifi.slash",
+                            description: Text(errorMessage)
+                        )
+                    } else if filtered.isEmpty {
+                        ContentUnavailableView(
+                            "No Bookings",
+                            systemImage: "list.clipboard",
+                            description: Text("No bookings match the current filter.")
+                        )
+                    } else {
+                        ScrollView {
+                            LazyVStack(spacing: 12) {
+                                ForEach(filtered) { booking in
+                                    NavigationLink {
+                                        AdminBookingDetailView(bookingId: booking.id, onUpdate: {
+                                            Task { await loadBookings() }
+                                        })
+                                    } label: {
+                                        AdminBookingRow(booking: booking)
+                                    }
+                                    .buttonStyle(.plain)
+                                }
+                            }
+                            .padding(.horizontal, 16)
+                            .padding(.vertical, 8)
+                        }
                     }
                 }
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
             }
+            .background(Color(.systemGroupedBackground))
+            .navigationTitle("All Bookings")
             .task { await loadBookings() }
             .refreshable { await loadBookings() }
         }
@@ -70,37 +90,88 @@ struct AllBookingsView: View {
     }
 }
 
+// MARK: - Filter Chip
+
+struct FilterChip: View {
+    let label: String
+    let isSelected: Bool
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            Text(label)
+                .font(.subheadline.weight(isSelected ? .semibold : .regular))
+                .padding(.horizontal, 14)
+                .padding(.vertical, 7)
+                .background(isSelected ? Color.accentColor : Color(.secondarySystemBackground))
+                .foregroundStyle(isSelected ? .white : .primary)
+                .clipShape(Capsule())
+        }
+        .buttonStyle(.plain)
+        .animation(.spring(response: 0.2), value: isSelected)
+    }
+}
+
 // MARK: - Admin Booking Row
 
 struct AdminBookingRow: View {
     let booking: Booking
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 6) {
+        VStack(spacing: 0) {
+            // Header
             HStack {
                 if let user = booking.customer {
-                    Text(user.name).font(.headline)
+                    HStack(spacing: 8) {
+                        ZStack {
+                            Circle()
+                                .fill(Color.accentColor.opacity(0.15))
+                                .frame(width: 32, height: 32)
+                            Text(user.name.prefix(1).uppercased())
+                                .font(.caption.bold())
+                                .foregroundStyle(.tint)
+                        }
+                        Text(user.name)
+                            .font(.headline)
+                    }
                 } else {
                     Text("Booking").font(.headline)
                 }
                 Spacer()
                 StatusBadge(status: booking.statusEnum)
             }
-            if let route = booking.route {
-                Text("\(route.from) → \(route.to)")
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
+            .padding(.horizontal, 14)
+            .padding(.top, 14)
+            .padding(.bottom, 10)
+
+            Divider().padding(.horizontal, 14)
+
+            // Route + meta
+            VStack(alignment: .leading, spacing: 6) {
+                if let route = booking.route {
+                    Label("\(route.from) → \(route.to)", systemImage: "map")
+                        .font(.subheadline)
+                        .foregroundStyle(.primary)
+                }
+                HStack(spacing: 14) {
+                    Label(booking.travelDate, systemImage: "calendar")
+                    Label("₹\(Int(booking.totalAmount))", systemImage: "indianrupeesign")
+                        .foregroundStyle(.tint)
+                        .fontWeight(.semibold)
+                    Spacer()
+                    Image(systemName: "chevron.right")
+                        .font(.caption.bold())
+                        .foregroundStyle(.tertiary)
+                }
+                .font(.caption)
+                .foregroundStyle(.secondary)
             }
-            HStack {
-                Label(booking.travelDate, systemImage: "calendar")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                Spacer()
-                Text("₹\(Int(booking.totalAmount))")
-                    .font(.caption.bold())
-            }
+            .padding(.horizontal, 14)
+            .padding(.vertical, 12)
         }
-        .padding(.vertical, 4)
+        .background(.background)
+        .clipShape(RoundedRectangle(cornerRadius: 16))
+        .shadow(color: .black.opacity(0.06), radius: 8, y: 2)
     }
 }
 
