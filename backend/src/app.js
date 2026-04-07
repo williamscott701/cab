@@ -5,6 +5,7 @@ const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
 const connectDB = require('./config/db');
 const seedAdmin = require('./config/seed');
+const seedRoutes = require('./config/seedRoutes');
 
 // ── Validate required env vars ──────────────────────────────────────────────
 
@@ -82,6 +83,7 @@ const PORT = process.env.PORT || 3000;
 const start = async () => {
   await connectDB();
   await seedAdmin();
+  await seedRoutes();
   app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
 };
 

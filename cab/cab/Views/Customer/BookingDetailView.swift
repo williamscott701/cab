@@ -134,7 +134,9 @@ struct BookingDetailView: View {
                                     .frame(maxWidth: .infinity)
                                     .fontWeight(.medium)
                             }
+                        }
 
+                        Section {
                             Button(role: .destructive) {
                                 Task { await cancel() }
                             } label: {
