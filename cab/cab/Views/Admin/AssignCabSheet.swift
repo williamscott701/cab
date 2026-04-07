@@ -34,7 +34,7 @@ struct AssignCabSheet: View {
                             .frame(width: 56, height: 56)
                             .background(Color(red: 0.0, green: 0.73, blue: 0.78).opacity(0.12), in: .circle)
 
-                        Text("Assign a Driver")
+                        Text("Assign a Cab")
                             .font(.headline)
                     }
                     .frame(maxWidth: .infinity)

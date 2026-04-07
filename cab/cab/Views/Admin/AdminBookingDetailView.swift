@@ -154,7 +154,7 @@ struct AdminBookingDetailView: View {
                             Button {
                                 showAssignSheet = true
                             } label: {
-                                Label("Assign Driver", systemImage: "car.badge.gearshape")
+                                Label("Assign Cab", systemImage: "car.badge.gearshape")
                                     .frame(maxWidth: .infinity)
                                     .fontWeight(.medium)
                             }

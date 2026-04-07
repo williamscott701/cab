@@ -47,9 +47,6 @@ struct AdminTabView: View {
             AllBookingsView()
                 .tabItem { Label("Bookings", systemImage: "list.clipboard") }
 
-            CabListView()
-                .tabItem { Label("Cabs", systemImage: "car.fill") }
-
             AdminRouteListView()
                 .tabItem { Label("Routes", systemImage: "map.fill") }
 
