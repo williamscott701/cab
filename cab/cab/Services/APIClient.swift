@@ -35,6 +35,12 @@ struct LoginResponse: Decodable, Sendable {
     let user: User
 }
 
+// MARK: - Wrapped response envelope { data: T }
+
+private struct WrappedResponse<T: Decodable>: Decodable {
+    let data: T
+}
+
 // MARK: - APIClient
 
 actor APIClient {
@@ -92,15 +98,15 @@ actor APIClient {
         }
         try validate(response: response, data: data)
 
-        // Try direct decode first, then wrapped in { data: ... }
+        if let direct = try? decoder.decode(T.self, from: data) {
+            return direct
+        }
+        if let wrapped = try? decoder.decode(WrappedResponse<T>.self, from: data) {
+            return wrapped.data
+        }
         do {
             return try decoder.decode(T.self, from: data)
         } catch {
-            // Try wrapped envelope
-            struct Envelope: Decodable { let data: T }
-            if let envelope = try? decoder.decode(Envelope.self, from: data) {
-                return envelope.data
-            }
             throw APIError.decodingFailed
         }
     }
