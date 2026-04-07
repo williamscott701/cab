@@ -1,13 +1,12 @@
 import Foundation
 import Security
 
-// Explicitly nonisolated to allow calling from any actor context
-enum KeychainManager: Sendable {
+enum KeychainManager {
 
     private static let service = "paka.cab"
     private static let account = "authToken"
 
-    nonisolated static func saveToken(_ token: String) {
+    static func saveToken(_ token: String) {
         guard let data = token.data(using: .utf8) else { return }
         deleteToken()
         let query: [String: Any] = [
@@ -20,7 +19,7 @@ enum KeychainManager: Sendable {
         SecItemAdd(query as CFDictionary, nil)
     }
 
-    nonisolated static func getToken() -> String? {
+    static func getToken() -> String? {
         let query: [String: Any] = [
             kSecClass as String:        kSecClassGenericPassword,
             kSecAttrService as String:  service,
@@ -37,7 +36,7 @@ enum KeychainManager: Sendable {
         return token
     }
 
-    nonisolated static func deleteToken() {
+    static func deleteToken() {
         let query: [String: Any] = [
             kSecClass as String:        kSecClassGenericPassword,
             kSecAttrService as String:  service,

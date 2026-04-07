@@ -35,12 +35,6 @@ struct LoginResponse: Decodable, Sendable {
     let user: User
 }
 
-// MARK: - Wrapped response envelope { data: T }
-
-private struct WrappedResponse<T: Decodable>: Decodable {
-    let data: T
-}
-
 // MARK: - APIClient
 
 actor APIClient {
@@ -66,13 +60,13 @@ actor APIClient {
         path: String,
         method: String,
         body: (any Encodable)? = nil,
-        authenticated: Bool = true
+        token: String? = nil
     ) throws -> URLRequest {
         guard let url = URL(string: baseURL + path) else { throw APIError.invalidURL }
         var req = URLRequest(url: url)
         req.httpMethod = method
         req.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        if authenticated, let token = KeychainManager.getToken() {
+        if let token {
             req.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
         }
         if let body {
@@ -89,7 +83,8 @@ actor APIClient {
         body: (any Encodable)? = nil,
         authenticated: Bool = true
     ) async throws -> T {
-        let req = try makeRequest(path: path, method: method, body: body, authenticated: authenticated)
+        let token: String? = authenticated ? await MainActor.run { KeychainManager.getToken() } : nil
+        let req = try makeRequest(path: path, method: method, body: body, token: token)
         let (data, response): (Data, URLResponse)
         do {
             (data, response) = try await session.data(for: req)
@@ -98,15 +93,16 @@ actor APIClient {
         }
         try validate(response: response, data: data)
 
-        if let direct = try? decoder.decode(T.self, from: data) {
-            return direct
-        }
-        if let wrapped = try? decoder.decode(WrappedResponse<T>.self, from: data) {
-            return wrapped.data
-        }
         do {
             return try decoder.decode(T.self, from: data)
         } catch {
+            if let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+               let nested = json["data"] {
+                let nestedData = try JSONSerialization.data(withJSONObject: nested)
+                if let value = try? decoder.decode(T.self, from: nestedData) {
+                    return value
+                }
+            }
             throw APIError.decodingFailed
         }
     }
@@ -118,7 +114,8 @@ actor APIClient {
         body: (any Encodable)? = nil,
         authenticated: Bool = true
     ) async throws {
-        let req = try makeRequest(path: path, method: method, body: body, authenticated: authenticated)
+        let token: String? = authenticated ? await MainActor.run { KeychainManager.getToken() } : nil
+        let req = try makeRequest(path: path, method: method, body: body, token: token)
         let (data, response): (Data, URLResponse)
         do {
             (data, response) = try await session.data(for: req)
