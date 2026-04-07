@@ -229,9 +229,11 @@ struct AdminBookingDetailView: View {
     }
 
     private func load() async {
-        isLoading = true; errorMessage = nil
+        if booking == nil { isLoading = true }
+        errorMessage = nil
         defer { isLoading = false }
         do { booking = try await APIClient.shared.perform("/api/bookings/\(bookingId)") }
+        catch is CancellationError { }
         catch { errorMessage = error.localizedDescription }
     }
 

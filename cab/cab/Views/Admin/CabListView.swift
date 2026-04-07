@@ -81,9 +81,11 @@ struct CabListView: View {
     }
 
     private func load() async {
-        isLoading = true; errorMessage = nil
+        if cabs.isEmpty { isLoading = true }
+        errorMessage = nil
         defer { isLoading = false }
         do { cabs = try await APIClient.shared.perform("/api/cabs") }
+        catch is CancellationError { }
         catch { errorMessage = error.localizedDescription }
     }
 

@@ -181,9 +181,11 @@ struct BookingDetailView: View {
     }
 
     private func load() async {
-        isLoading = true; error = nil
+        if booking == nil { isLoading = true }
+        error = nil
         defer { isLoading = false }
         do { booking = try await APIClient.shared.perform("/api/bookings/my/\(bookingId)") }
+        catch is CancellationError { }
         catch { self.error = error.localizedDescription }
     }
 

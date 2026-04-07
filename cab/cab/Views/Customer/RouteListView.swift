@@ -53,9 +53,11 @@ struct RouteListView: View {
     }
 
     private func load() async {
-        isLoading = true; error = nil
+        if routes.isEmpty { isLoading = true }
+        error = nil
         defer { isLoading = false }
         do { routes = try await APIClient.shared.perform("/api/routes", authenticated: false) }
+        catch is CancellationError { }
         catch { self.error = error.localizedDescription }
     }
 }

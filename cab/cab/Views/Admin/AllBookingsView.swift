@@ -105,10 +105,13 @@ struct AllBookingsView: View {
     }
 
     private func load() async {
-        isLoading = true; errorMessage = nil
+        if bookings.isEmpty { isLoading = true }
+        errorMessage = nil
         defer { isLoading = false }
         do {
             bookings = try await APIClient.shared.perform("/api/bookings")
+        } catch is CancellationError {
+            // View disappeared — ignore silently
         } catch { errorMessage = error.localizedDescription }
     }
 }

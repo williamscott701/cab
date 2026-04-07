@@ -71,11 +71,13 @@ struct AdminRouteListView: View {
     }
 
     private func loadRoutes() async {
-        isLoading = true
+        if routes.isEmpty { isLoading = true }
         errorMessage = nil
         defer { isLoading = false }
         do {
             routes = try await APIClient.shared.perform("/api/routes", authenticated: false)
+        } catch is CancellationError {
+            // View disappeared — ignore silently
         } catch {
             errorMessage = error.localizedDescription
         }

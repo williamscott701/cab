@@ -152,19 +152,20 @@ actor APIClient {
 
     // MARK: - URL error mapping
 
-    private func mapURLError(_ error: Error) -> APIError {
+    private func mapURLError(_ error: Error) -> any Error {
+        if error is CancellationError { return error }
         guard let urlError = error as? URLError else {
-            return .unknown("Something went wrong. Please try again.")
+            return APIError.unknown("Something went wrong. Please try again.")
         }
         switch urlError.code {
         case .notConnectedToInternet, .networkConnectionLost:
-            return .unknown("No internet connection. Please check your network.")
+            return APIError.unknown("No internet connection. Please check your network.")
         case .timedOut:
-            return .unknown("Request timed out. Please try again.")
+            return APIError.unknown("Request timed out. Please try again.")
         case .cancelled:
-            return .unknown("Request was cancelled.")
+            return CancellationError()
         default:
-            return .unknown("Something went wrong. Please try again.")
+            return APIError.unknown("Something went wrong. Please try again.")
         }
     }
 }

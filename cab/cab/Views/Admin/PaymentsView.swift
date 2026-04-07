@@ -170,10 +170,13 @@ struct PaymentsView: View {
     }
 
     private func load() async {
-        isLoading = true; errorMessage = nil
+        if stats == nil { isLoading = true }
+        errorMessage = nil
         defer { isLoading = false }
         do {
             stats = try await APIClient.shared.perform("/api/bookings/stats")
+        } catch is CancellationError {
+            // View disappeared — ignore silently
         } catch {
             errorMessage = error.localizedDescription
         }
