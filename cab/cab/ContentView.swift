@@ -1,24 +1,61 @@
-//
-//  ContentView.swift
-//  cab
-//
-//  Created by Willam Scott on 07/04/26.
-//
-
 import SwiftUI
 
-struct ContentView: View {
+/// Top-level router. Switches between the auth flow and the role-appropriate TabView.
+struct RootView: View {
+
+    @Environment(AuthManager.self) private var authManager
+
     var body: some View {
-        VStack {
-            Image(systemName: "globe")
-                .imageScale(.large)
-                .foregroundStyle(.tint)
-            Text("Hello, world!")
+        if authManager.isLoggedIn {
+            if authManager.role == "admin" {
+                AdminTabView()
+            } else {
+                CustomerTabView()
+            }
+        } else {
+            LoginView()
         }
-        .padding()
+    }
+}
+
+// MARK: - Customer TabView
+
+struct CustomerTabView: View {
+    var body: some View {
+        TabView {
+            RouteListView()
+                .tabItem { Label("Routes", systemImage: "map") }
+
+            MyBookingsView()
+                .tabItem { Label("My Bookings", systemImage: "list.bullet.clipboard") }
+
+            ProfileView()
+                .tabItem { Label("Profile", systemImage: "person.circle") }
+        }
+    }
+}
+
+// MARK: - Admin TabView
+
+struct AdminTabView: View {
+    var body: some View {
+        TabView {
+            AllBookingsView()
+                .tabItem { Label("Bookings", systemImage: "list.clipboard") }
+
+            CabListView()
+                .tabItem { Label("Cabs", systemImage: "car.fill") }
+
+            AdminRouteListView()
+                .tabItem { Label("Routes", systemImage: "map.fill") }
+
+            ProfileView()
+                .tabItem { Label("Profile", systemImage: "person.circle") }
+        }
     }
 }
 
 #Preview {
-    ContentView()
+    RootView()
+        .environment(AuthManager())
 }
