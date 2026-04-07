@@ -4,136 +4,91 @@ struct MyBookingsView: View {
 
     @State private var bookings: [Booking] = []
     @State private var isLoading = false
-    @State private var errorMessage: String?
+    @State private var error: String?
 
     var body: some View {
         NavigationStack {
             Group {
                 if isLoading {
-                    ProgressView()
-                        .frame(maxWidth: .infinity, maxHeight: .infinity)
-                } else if let errorMessage {
-                    ContentUnavailableView(
-                        "Couldn't Load",
-                        systemImage: "wifi.slash",
-                        description: Text(errorMessage)
-                    )
+                    ProgressView().frame(maxWidth: .infinity, maxHeight: .infinity)
+                } else if let error {
+                    ContentUnavailableView("Couldn't Load", systemImage: "wifi.slash",
+                                          description: Text(error))
                 } else if bookings.isEmpty {
-                    ContentUnavailableView(
-                        "No Bookings Yet",
-                        systemImage: "ticket",
-                        description: Text("Book your first ride from the Routes tab.")
-                    )
+                    ContentUnavailableView("No Bookings", systemImage: "ticket",
+                                          description: Text("Book your first ride from the Routes tab."))
                 } else {
-                    ScrollView {
-                        LazyVStack(spacing: 12) {
-                            ForEach(bookings) { booking in
-                                NavigationLink {
-                                    BookingDetailView(bookingId: booking.id)
-                                } label: {
-                                    BookingRow(booking: booking)
-                                }
-                                .buttonStyle(.plain)
-                            }
+                    List(bookings) { booking in
+                        NavigationLink {
+                            BookingDetailView(bookingId: booking.id)
+                        } label: {
+                            BookingRow(booking: booking)
                         }
-                        .padding(.horizontal, 16)
-                        .padding(.vertical, 8)
                     }
+                    .listStyle(.insetGrouped)
                 }
             }
             .navigationTitle("My Bookings")
-            .task { await loadBookings() }
-            .refreshable { await loadBookings() }
+            .task { await load() }
+            .refreshable { await load() }
         }
     }
 
-    private func loadBookings() async {
-        isLoading = true
-        errorMessage = nil
+    private func load() async {
+        isLoading = true; error = nil
         defer { isLoading = false }
-        do {
-            bookings = try await APIClient.shared.perform("/api/bookings/my")
-        } catch {
-            errorMessage = error.localizedDescription
-        }
+        do { bookings = try await APIClient.shared.perform("/api/bookings/my") }
+        catch { self.error = error.localizedDescription }
     }
 }
 
-// MARK: - Booking Row Card
+// MARK: - Booking Row
 
 struct BookingRow: View {
     let booking: Booking
 
     var body: some View {
-        VStack(spacing: 0) {
-            // Status strip
-            HStack {
-                StatusBadge(status: booking.statusEnum)
-                Spacer()
-                Text("₹\(Int(booking.totalAmount))")
-                    .font(.headline.bold())
-                    .foregroundStyle(.primary)
-            }
-            .padding(.horizontal, 16)
-            .padding(.top, 14)
-            .padding(.bottom, 10)
+        HStack(spacing: 12) {
+            // Status color stripe
+            RoundedRectangle(cornerRadius: 2)
+                .fill(statusColor)
+                .frame(width: 4)
+                .padding(.vertical, 2)
 
-            Divider().padding(.horizontal, 16)
-
-            // Route
-            HStack(spacing: 12) {
-                VStack(spacing: 0) {
-                    Circle().fill(.tint).frame(width: 7, height: 7)
-                    Rectangle().fill(Color.accentColor.opacity(0.3)).frame(width: 1.5).frame(maxHeight: .infinity)
-                    Circle().fill(Color(.systemGray3)).frame(width: 7, height: 7)
-                }
-                .padding(.vertical, 3)
-
-                if let route = booking.route {
-                    VStack(alignment: .leading, spacing: 10) {
-                        Text(route.from)
-                            .font(.subheadline.weight(.semibold))
-                        Text(route.to)
-                            .font(.subheadline)
-                            .foregroundStyle(.secondary)
+            VStack(alignment: .leading, spacing: 4) {
+                HStack {
+                    if let route = booking.route {
+                        Text("\(route.from) → \(route.to)").font(.headline)
+                    } else {
+                        Text("Booking").font(.headline)
                     }
-                } else {
-                    Text("Route details loading…")
-                        .font(.subheadline)
-                        .foregroundStyle(.secondary)
+                    Spacer()
+                    StatusBadge(status: booking.statusEnum)
                 }
-
-                Spacer()
-
-                Image(systemName: "chevron.right")
-                    .font(.caption.bold())
-                    .foregroundStyle(.tertiary)
-            }
-            .padding(.horizontal, 16)
-            .padding(.vertical, 12)
-
-            // Meta row
-            HStack(spacing: 16) {
-                Label(booking.travelDate, systemImage: "calendar")
-                Label("\(booking.preferredSeater)-Seater", systemImage: "person.2.fill")
-                if booking.prefersCNG {
-                    Label("CNG", systemImage: "leaf.fill")
-                        .foregroundStyle(.green)
+                HStack(spacing: 12) {
+                    Label(booking.formattedDate, systemImage: "calendar")
+                    Text("₹\(Int(booking.totalAmount))")
+                        .foregroundStyle(.tint)
+                        .fontWeight(.medium)
                 }
+                .font(.caption)
+                .foregroundStyle(.secondary)
             }
-            .font(.caption)
-            .foregroundStyle(.secondary)
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .padding(.horizontal, 16)
-            .padding(.bottom, 14)
         }
-        .background(.background)
-        .clipShape(RoundedRectangle(cornerRadius: 16))
-        .shadow(color: .black.opacity(0.06), radius: 8, y: 2)
+        .padding(.vertical, 2)
+    }
+
+    private var statusColor: Color {
+        switch booking.statusEnum {
+        case .pending:   return .orange
+        case .confirmed: return .blue
+        case .completed: return .green
+        case .cancelled: return Color(.systemGray4)
+        }
     }
 }
 
-// MARK: - Status Badge
+// MARK: - Status Badge (shared across all views)
 
 struct StatusBadge: View {
     let status: BookingStatus
@@ -149,9 +104,9 @@ struct StatusBadge: View {
 
     var icon: String {
         switch status {
-        case .pending:   return "clock.fill"
+        case .pending:   return "clock"
         case .confirmed: return "checkmark.circle.fill"
-        case .completed: return "flag.checkered"
+        case .completed: return "checkmark.seal.fill"
         case .cancelled: return "xmark.circle.fill"
         }
     }
@@ -159,15 +114,12 @@ struct StatusBadge: View {
     var body: some View {
         Label(status.displayName, systemImage: icon)
             .font(.caption.bold())
-            .padding(.horizontal, 9)
-            .padding(.vertical, 4)
-            .background(color.opacity(0.13))
+            .padding(.horizontal, 8)
+            .padding(.vertical, 3)
+            .background(color.opacity(0.15))
             .foregroundStyle(color)
             .clipShape(Capsule())
     }
 }
 
-#Preview {
-    MyBookingsView()
-        .environment(AuthManager())
-}
+#Preview { MyBookingsView().environment(AuthManager()) }

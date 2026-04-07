@@ -96,7 +96,7 @@ struct AdminRouteRow: View {
     let route: Route
 
     private var priceRange: String {
-        let prices = route.prices.map(\.price)
+        let prices = route.prices?.map(\.price) ?? []
         guard let lo = prices.min(), let hi = prices.max() else { return "" }
         return "₹\(Int(lo)) – ₹\(Int(hi))"
     }
@@ -113,18 +113,12 @@ struct AdminRouteRow: View {
             VStack(alignment: .leading, spacing: 3) {
                 Text("\(route.from) → \(route.to)")
                     .font(.headline)
-                HStack(spacing: 8) {
-                    Text(route.displayRouteType)
-                        .foregroundStyle(.secondary)
-                    if !priceRange.isEmpty {
-                        Text("·")
-                            .foregroundStyle(.secondary)
-                        Text(priceRange)
-                            .foregroundStyle(.tint)
-                            .fontWeight(.medium)
-                    }
+                if !priceRange.isEmpty {
+                    Text(priceRange)
+                        .font(.caption)
+                        .foregroundStyle(.tint)
+                        .fontWeight(.medium)
                 }
-                .font(.caption)
             }
         }
         .padding(.vertical, 4)

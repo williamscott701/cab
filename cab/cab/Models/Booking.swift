@@ -75,6 +75,21 @@ struct Booking: Codable, Identifiable {
     var customer: User? { customerId.object }
 
     var statusEnum: BookingStatus { BookingStatus(rawValue: status) ?? .pending }
+
+    /// Converts "yyyy-MM-dd" or ISO 8601 ("2026-04-07T00:00:00.000Z") → "Apr 7, 2026"
+    var formattedDate: String {
+        let display = DateFormatter()
+        display.dateStyle = .medium
+        display.timeStyle = .none
+        // ISO 8601 (what MongoDB returns)
+        let iso = ISO8601DateFormatter()
+        if let date = iso.date(from: travelDate) { return display.string(from: date) }
+        // Plain date string fallback
+        let ymd = DateFormatter()
+        ymd.dateFormat = "yyyy-MM-dd"
+        if let date = ymd.date(from: travelDate) { return display.string(from: date) }
+        return travelDate
+    }
 }
 
 // MARK: - Request body

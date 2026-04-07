@@ -4,6 +4,7 @@ const {
   createBooking,
   getMyBookings,
   getMyBookingById,
+  cancelBooking,
   getAllBookings,
   getBookingById,
   assignCab,
@@ -33,6 +34,7 @@ router.post(
 
 router.get('/my', authenticate, requireRole('customer'), getMyBookings);
 router.get('/my/:id', authenticate, requireRole('customer'), getMyBookingById);
+router.patch('/my/:id/cancel', authenticate, requireRole('customer'), cancelBooking);
 
 // Admin routes
 router.get('/', authenticate, requireRole('admin'), getAllBookings);

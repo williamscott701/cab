@@ -5,186 +5,113 @@ struct AssignCabSheet: View {
     let bookingId: String
     let onAssigned: () -> Void
 
-    @State private var cabs: [Cab] = []
-    @State private var isLoading = false
-    @State private var errorMessage: String?
+    @State private var driverName = ""
+    @State private var driverPhone = ""
+    @State private var licensePlate = ""
     @State private var isAssigning = false
-    @State private var assigningId: String?
+    @State private var errorMessage: String?
+
+    private var isFormValid: Bool {
+        !driverName.trimmingCharacters(in: .whitespaces).isEmpty &&
+        !driverPhone.trimmingCharacters(in: .whitespaces).isEmpty &&
+        !licensePlate.trimmingCharacters(in: .whitespaces).isEmpty
+    }
 
     var body: some View {
         NavigationStack {
-            Group {
-                if isLoading {
-                    ProgressView("Loading cabs…")
-                        .frame(maxWidth: .infinity, maxHeight: .infinity)
-                } else if let errorMessage {
-                    ContentUnavailableView(
-                        "Couldn't Load",
-                        systemImage: "wifi.slash",
-                        description: Text(errorMessage)
-                    )
-                } else if cabs.filter(\.isActive).isEmpty {
-                    ContentUnavailableView(
-                        "No Active Cabs",
-                        systemImage: "car.fill",
-                        description: Text("Add cabs from the Cabs tab.")
-                    )
-                } else {
-                    ScrollView {
-                        LazyVStack(spacing: 10) {
-                            ForEach(cabs.filter(\.isActive)) { cab in
-                                CabSelectionCard(
-                                    cab: cab,
-                                    isAssigning: assigningId == cab.id
-                                ) {
-                                    Task { await assign(cabId: cab.id) }
-                                }
-                                .disabled(isAssigning)
-                            }
-                        }
-                        .padding(.horizontal, 16)
-                        .padding(.vertical, 8)
+            Form {
+                Section("Driver Details") {
+                    TextField("Driver Name", text: $driverName)
+                        .textContentType(.name)
+                    TextField("Phone Number", text: $driverPhone)
+                        .keyboardType(.phonePad)
+                        .textContentType(.telephoneNumber)
+                }
+
+                Section("Vehicle") {
+                    TextField("Car Number (e.g. DL 01 AB 1234)", text: $licensePlate)
+                        .autocorrectionDisabled()
+                        .textInputAutocapitalization(.characters)
+                }
+
+                if let errorMessage {
+                    Section {
+                        Label(errorMessage, systemImage: "exclamationmark.circle.fill")
+                            .foregroundStyle(.red)
+                            .font(.callout)
                     }
                 }
+
+                Section {
+                    Button {
+                        Task { await assign() }
+                    } label: {
+                        HStack(spacing: 8) {
+                            if isAssigning { ProgressView().scaleEffect(0.85) }
+                            Text(isAssigning ? "Assigning…" : "Confirm Assignment")
+                                .fontWeight(.semibold)
+                                .frame(maxWidth: .infinity)
+                        }
+                        .frame(height: 44)
+                    }
+                    .buttonStyle(.borderedProminent)
+                    .disabled(!isFormValid || isAssigning)
+                }
             }
-            .background(Color(.systemGroupedBackground))
-            .navigationTitle("Assign a Cab")
+            .navigationTitle("Assign Cab")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Cancel") { onAssigned() }
                 }
             }
-            .task { await loadCabs() }
         }
-        .presentationDetents([.medium, .large])
+        .presentationDetents([.medium])
     }
 
-    private func loadCabs() async {
-        isLoading = true
-        errorMessage = nil
-        defer { isLoading = false }
-        do {
-            cabs = try await APIClient.shared.perform("/api/cabs")
-        } catch {
-            errorMessage = error.localizedDescription
-        }
-    }
-
-    private func assign(cabId: String) async {
+    private func assign() async {
         isAssigning = true
-        assigningId = cabId
-        defer { isAssigning = false; assigningId = nil }
+        defer { isAssigning = false }
+        errorMessage = nil
         do {
-            struct Body: Encodable { let cabId: String }
+            struct Body: Encodable { let driverName, driverPhone, licensePlate: String }
             let _: Booking = try await APIClient.shared.perform(
-                "/api/bookings/\(bookingId)/assign",
-                method: "PATCH",
-                body: Body(cabId: cabId)
+                "/api/bookings/\(bookingId)/assign", method: "PATCH",
+                body: Body(
+                    driverName: driverName.trimmingCharacters(in: .whitespaces),
+                    driverPhone: driverPhone.trimmingCharacters(in: .whitespaces),
+                    licensePlate: licensePlate.trimmingCharacters(in: .whitespaces).uppercased()
+                )
             )
             onAssigned()
-        } catch {
-            errorMessage = error.localizedDescription
-        }
+        } catch { errorMessage = error.localizedDescription }
     }
 }
 
-// MARK: - Cab Selection Card
-
-struct CabSelectionCard: View {
-    let cab: Cab
-    let isAssigning: Bool
-    let action: () -> Void
-
-    var body: some View {
-        Button(action: action) {
-            HStack(spacing: 14) {
-                ZStack {
-                    RoundedRectangle(cornerRadius: 12)
-                        .fill(Color.accentColor.opacity(0.12))
-                        .frame(width: 52, height: 52)
-                    Image(systemName: "car.fill")
-                        .font(.title3)
-                        .foregroundStyle(.tint)
-                }
-
-                VStack(alignment: .leading, spacing: 3) {
-                    Text(cab.driverName)
-                        .font(.headline)
-                    Text("\(cab.vehicleModel) · \(cab.licensePlate)")
-                        .font(.subheadline)
-                        .foregroundStyle(.secondary)
-                    HStack(spacing: 8) {
-                        Label("\(cab.seaterCapacity)-Seater", systemImage: "person.2.fill")
-                        if cab.isCNG {
-                            Label("CNG", systemImage: "leaf.fill")
-                                .foregroundStyle(.green)
-                        }
-                        Text("· \(cab.color)")
-                    }
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                }
-
-                Spacer()
-
-                if isAssigning {
-                    ProgressView()
-                } else {
-                    Image(systemName: "checkmark.circle")
-                        .font(.title3)
-                        .foregroundStyle(.tint)
-                }
-            }
-            .padding(14)
-            .background(.background)
-            .clipShape(RoundedRectangle(cornerRadius: 16))
-            .shadow(color: .black.opacity(0.06), radius: 6, y: 2)
-        }
-        .buttonStyle(.plain)
-    }
-}
-
-// MARK: - Cab Row (for CabListView)
+// MARK: - Cab Row (used in CabListView)
 
 struct CabRow: View {
     let cab: Cab
 
     var body: some View {
-        HStack(spacing: 12) {
-            ZStack {
-                RoundedRectangle(cornerRadius: 10)
-                    .fill(cab.isActive ? Color.accentColor.opacity(0.12) : Color(.secondarySystemBackground))
-                    .frame(width: 44, height: 44)
-                Image(systemName: "car.fill")
-                    .foregroundStyle(cab.isActive ? Color.accentColor : Color.secondary)
+        VStack(alignment: .leading, spacing: 3) {
+            HStack {
+                Text(cab.driverName).font(.headline)
+                if !cab.isActive {
+                    Text("Inactive")
+                        .font(.caption.bold())
+                        .foregroundStyle(.secondary)
+                        .padding(.horizontal, 6)
+                        .padding(.vertical, 2)
+                        .background(Color(.systemGray5))
+                        .clipShape(Capsule())
+                }
             }
-            VStack(alignment: .leading, spacing: 3) {
-                HStack {
-                    Text(cab.driverName).font(.headline)
-                    if !cab.isActive {
-                        Text("Inactive")
-                            .font(.caption.bold())
-                            .padding(.horizontal, 6)
-                            .padding(.vertical, 2)
-                            .background(Color(.systemGray5))
-                            .foregroundStyle(.secondary)
-                            .clipShape(Capsule())
-                    }
-                }
-                Text("\(cab.vehicleModel) · \(cab.licensePlate)")
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-                HStack(spacing: 8) {
-                    Label("\(cab.seaterCapacity)-Seater", systemImage: "person.2.fill")
-                    if cab.isCNG { Label("CNG", systemImage: "leaf.fill").foregroundStyle(.green) }
-                    Text("· \(cab.color)")
-                }
-                .font(.caption)
+            Text("\(cab.licensePlate) · \(cab.driverPhone)")
+                .font(.subheadline)
                 .foregroundStyle(.secondary)
-            }
         }
-        .padding(.vertical, 4)
+        .padding(.vertical, 2)
     }
 }
 

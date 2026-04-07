@@ -30,7 +30,7 @@ struct User: Codable, Identifiable {
         name = try c.decode(String.self, forKey: .name)
         email = try c.decode(String.self, forKey: .email)
         phone = try c.decode(String.self, forKey: .phone)
-        role = try c.decode(String.self, forKey: .role)
+        role = try c.decodeIfPresent(String.self, forKey: .role)
         createdAt = try c.decodeIfPresent(String.self, forKey: .createdAt)
     }
 

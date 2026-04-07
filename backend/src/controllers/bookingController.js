@@ -68,6 +68,21 @@ const getMyBookingById = async (req, res) => {
   }
 };
 
+const cancelBooking = async (req, res) => {
+  try {
+    const booking = await Booking.findOne({ _id: req.params.id, customerId: req.user._id });
+    if (!booking) return res.status(404).json({ message: 'Booking not found' });
+    if (booking.status !== 'pending') {
+      return res.status(400).json({ message: 'Only pending bookings can be cancelled' });
+    }
+    booking.status = 'cancelled';
+    await booking.save();
+    res.json(booking);
+  } catch (err) {
+    res.status(500).json({ message: 'Server error', error: err.message });
+  }
+};
+
 // ── Admin ─────────────────────────────────────────────────────────────────────
 
 const getAllBookings = async (req, res) => {
@@ -157,6 +172,7 @@ module.exports = {
   createBooking,
   getMyBookings,
   getMyBookingById,
+  cancelBooking,
   getAllBookings,
   getBookingById,
   assignCab,
