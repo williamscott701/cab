@@ -26,7 +26,7 @@ struct LoginView: View {
                                 endPoint: .trailing
                             )
                         )
-                    Text("Vola")
+                    Text("Vola Cabs")
                         .font(.system(size: 32, weight: .bold, design: .rounded))
                     Text("Book your ride in seconds")
                         .font(.subheadline)
