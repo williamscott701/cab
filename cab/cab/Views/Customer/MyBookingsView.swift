@@ -69,7 +69,7 @@ struct BookingRow: View {
                     Text("₹\(Int(booking.totalAmount))")
                         .foregroundStyle(.tint)
                 }
-                .font(.caption)
+                .font(.subheadline)
                 .foregroundStyle(.secondary)
             }
 
@@ -115,7 +115,7 @@ struct StatusBadge: View {
 
     var body: some View {
         Text(status.displayName)
-            .font(.caption2.weight(.bold))
+            .font(.caption.weight(.bold))
             .padding(.horizontal, 8)
             .padding(.vertical, 4)
             .background(color.opacity(0.12), in: .capsule)

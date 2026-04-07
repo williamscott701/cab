@@ -62,7 +62,7 @@ struct PaymentsView: View {
                 .foregroundStyle(teal)
 
             Text("\(cm.completed) completed booking\(cm.completed == 1 ? "" : "s")")
-                .font(.caption)
+                .font(.subheadline)
                 .foregroundStyle(.secondary)
         }
         .frame(maxWidth: .infinity)
@@ -86,7 +86,7 @@ struct PaymentsView: View {
                 .font(.title3.weight(.bold).monospacedDigit())
                 .foregroundStyle(color)
             Text(label)
-                .font(.caption2)
+                .font(.caption)
                 .foregroundStyle(.secondary)
         }
         .frame(maxWidth: .infinity)
@@ -116,7 +116,7 @@ struct PaymentsView: View {
                                 Text(entry.displayMonth)
                                     .font(.subheadline.weight(.medium))
                                 Text("\(entry.count) booking\(entry.count == 1 ? "" : "s")")
-                                    .font(.caption)
+                                    .font(.subheadline)
                                     .foregroundStyle(.secondary)
                             }
 
@@ -147,7 +147,7 @@ struct PaymentsView: View {
                 Text("All-Time Revenue")
                     .font(.subheadline.weight(.medium))
                 Text("\(allTime.count) completed booking\(allTime.count == 1 ? "" : "s")")
-                    .font(.caption)
+                    .font(.subheadline)
                     .foregroundStyle(.secondary)
             }
 

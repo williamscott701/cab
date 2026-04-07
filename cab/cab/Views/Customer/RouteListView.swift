@@ -92,7 +92,7 @@ struct RouteRow: View {
 
                 if let p = priceRange {
                     Text(p)
-                        .font(.caption.weight(.medium))
+                        .font(.subheadline.weight(.medium))
                         .foregroundStyle(.tint)
                 }
             }

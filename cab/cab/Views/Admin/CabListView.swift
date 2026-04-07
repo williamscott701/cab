@@ -122,7 +122,7 @@ struct CabRow: View {
                         .font(.subheadline.weight(.semibold))
                     if !cab.isActive {
                         Text("Inactive")
-                            .font(.caption2.weight(.bold))
+                            .font(.caption.weight(.bold))
                             .padding(.horizontal, 6)
                             .padding(.vertical, 2)
                             .background(.red.opacity(0.12), in: .capsule)
@@ -131,21 +131,21 @@ struct CabRow: View {
                 }
 
                 Text("\(cab.vehicleModel) · \(cab.licensePlate)")
-                    .font(.caption)
+                    .font(.subheadline)
                     .foregroundStyle(.secondary)
 
                 HStack(spacing: 8) {
                     Text("\(cab.seaterCapacity)-Seater")
                     if cab.isCNG {
                         Text("CNG")
-                            .font(.caption2.weight(.bold))
+                            .font(.caption.weight(.bold))
                             .padding(.horizontal, 5)
                             .padding(.vertical, 1)
                             .background(.green.opacity(0.12), in: .capsule)
                             .foregroundStyle(.green)
                     }
                 }
-                .font(.caption)
+                .font(.subheadline)
                 .foregroundStyle(.secondary)
             }
         }

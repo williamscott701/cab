@@ -33,7 +33,7 @@ struct BookingDetailView: View {
                                     .font(.subheadline.weight(.semibold))
                                     .foregroundStyle(headerColor)
                                 Text(booking.formattedDate)
-                                    .font(.caption)
+                                    .font(.subheadline)
                                     .foregroundStyle(.secondary)
                             }
 

@@ -132,7 +132,7 @@ struct AdminBookingRow: View {
 
                 if let route = booking.route {
                     Text("\(route.from) → \(route.to)")
-                        .font(.caption)
+                        .font(.subheadline)
                         .foregroundStyle(.secondary)
                         .lineLimit(1)
                 }
@@ -142,7 +142,7 @@ struct AdminBookingRow: View {
                     Text("₹\(Int(booking.totalAmount))")
                         .foregroundStyle(.tint)
                 }
-                .font(.caption)
+                .font(.subheadline)
                 .foregroundStyle(.secondary)
             }
 

@@ -32,12 +32,12 @@ struct AddEditRouteView: View {
                             } icon: {
                                 Image(systemName: "car.fill")
                                     .foregroundStyle(.secondary)
-                                    .font(.caption)
+                                    .font(.subheadline)
                             }
 
                             if entry.isCNG {
                                 Text("CNG")
-                                    .font(.caption2.weight(.bold))
+                                    .font(.caption.weight(.bold))
                                     .padding(.horizontal, 6)
                                     .padding(.vertical, 2)
                                     .background(.green.opacity(0.12), in: .capsule)
