@@ -39,7 +39,7 @@ const createBooking = async (req, res) => {
 const getMyBookings = async (req, res) => {
   try {
     const bookings = await Booking.find({ customerId: req.user._id })
-      .populate('routeId', 'from to routeType')
+      .populate('routeId', 'from to routeType prices')
       .sort({ createdAt: -1 });
     res.json(bookings);
   } catch (err) {
@@ -50,7 +50,7 @@ const getMyBookings = async (req, res) => {
 const getMyBookingById = async (req, res) => {
   try {
     const booking = await Booking.findOne({ _id: req.params.id, customerId: req.user._id })
-      .populate('routeId', 'from to routeType');
+      .populate('routeId', 'from to routeType prices');
     if (!booking) return res.status(404).json({ message: 'Booking not found' });
 
     // Hide driver details until confirmed
