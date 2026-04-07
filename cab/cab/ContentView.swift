@@ -6,15 +6,18 @@ struct RootView: View {
     @Environment(AuthManager.self) private var authManager
 
     var body: some View {
-        if authManager.isLoggedIn {
-            if authManager.role == "admin" {
-                AdminTabView()
+        Group {
+            if authManager.isLoggedIn {
+                if authManager.role == "admin" {
+                    AdminTabView()
+                } else {
+                    CustomerTabView()
+                }
             } else {
-                CustomerTabView()
+                LoginView()
             }
-        } else {
-            LoginView()
         }
+        .animation(.default, value: authManager.isLoggedIn)
     }
 }
 
@@ -32,6 +35,7 @@ struct CustomerTabView: View {
             ProfileView()
                 .tabItem { Label("Profile", systemImage: "person.circle") }
         }
+        .tint(Color(red: 0.0, green: 0.73, blue: 0.78))
     }
 }
 
@@ -52,6 +56,7 @@ struct AdminTabView: View {
             ProfileView()
                 .tabItem { Label("Profile", systemImage: "person.circle") }
         }
+        .tint(Color(red: 0.0, green: 0.73, blue: 0.78))
     }
 }
 

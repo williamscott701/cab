@@ -1,8 +1,9 @@
 import SwiftUI
 
-struct BookingFormView: View {
+struct EditBookingView: View {
 
-    let route: Route
+    let booking: Booking
+    let onSaved: () async -> Void
     @Environment(\.dismiss) private var dismiss
 
     @State private var travelDate = Date.now
@@ -12,10 +13,9 @@ struct BookingFormView: View {
     @State private var customerNotes = ""
     @State private var isSubmitting = false
     @State private var errorMessage: String?
-    @State private var didSubmit = false
 
     private var calculatedPrice: Double? {
-        route.price(forSeater: selectedSeater, isCNG: prefersCNG)
+        booking.route?.price(forSeater: selectedSeater, isCNG: prefersCNG)
     }
 
     private let dateFormatter: DateFormatter = {
@@ -27,33 +27,35 @@ struct BookingFormView: View {
     var body: some View {
         NavigationStack {
             Form {
-                // Route header
-                Section {
-                    HStack(spacing: 14) {
-                        Image(systemName: "arrow.triangle.swap")
-                            .font(.system(size: 18, weight: .semibold))
-                            .foregroundStyle(
-                                LinearGradient(
-                                    colors: [Color(red: 0.0, green: 0.78, blue: 0.75), Color(red: 0.0, green: 0.68, blue: 0.82)],
-                                    startPoint: .leading,
-                                    endPoint: .trailing
+                // Route header (read-only)
+                if let route = booking.route {
+                    Section {
+                        HStack(spacing: 14) {
+                            Image(systemName: "arrow.triangle.swap")
+                                .font(.system(size: 18, weight: .semibold))
+                                .foregroundStyle(
+                                    LinearGradient(
+                                        colors: [Color(red: 0.0, green: 0.78, blue: 0.75), Color(red: 0.0, green: 0.68, blue: 0.82)],
+                                        startPoint: .leading,
+                                        endPoint: .trailing
+                                    )
                                 )
-                            )
-                            .frame(width: 42, height: 42)
-                            .background(Color(red: 0.0, green: 0.73, blue: 0.78).opacity(0.12), in: .rect(cornerRadius: 10))
+                                .frame(width: 42, height: 42)
+                                .background(Color(red: 0.0, green: 0.73, blue: 0.78).opacity(0.12), in: .rect(cornerRadius: 10))
 
-                        Text("\(route.from) → \(route.to)")
-                            .font(.headline)
+                            Text("\(route.from) → \(route.to)")
+                                .font(.headline)
 
-                        Spacer()
+                            Spacer()
 
-                        if let price = calculatedPrice {
-                            Text("₹\(Int(price))")
-                                .font(.title2.weight(.bold))
-                                .foregroundStyle(Color(red: 0.0, green: 0.73, blue: 0.78))
+                            if let price = calculatedPrice {
+                                Text("₹\(Int(price))")
+                                    .font(.title2.weight(.bold))
+                                    .foregroundStyle(Color(red: 0.0, green: 0.73, blue: 0.78))
+                            }
                         }
+                        .padding(.vertical, 4)
                     }
-                    .padding(.vertical, 4)
                 }
 
                 // Travel details
@@ -101,17 +103,17 @@ struct BookingFormView: View {
                     }
                 }
 
-                // Confirm
+                // Save
                 Section {
                     Button {
-                        Task { await submit() }
+                        Task { await save() }
                     } label: {
                         HStack {
                             Spacer()
                             if isSubmitting {
                                 ProgressView().tint(.white).padding(.trailing, 6)
                             }
-                            Text(isSubmitting ? "Booking…" : "Confirm Booking")
+                            Text(isSubmitting ? "Saving…" : "Save Changes")
                                 .fontWeight(.semibold)
                             Spacer()
                         }
@@ -132,47 +134,48 @@ struct BookingFormView: View {
                     .listRowBackground(Color.clear)
                 }
             }
-            .navigationTitle("Book a Cab")
+            .navigationTitle("Edit Booking")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Cancel") { dismiss() }
                 }
             }
-            .alert("Booking Submitted!", isPresented: $didSubmit) {
-                Button("Done") { dismiss() }
-            } message: {
-                Text("Your booking is pending. We'll assign a cab shortly.")
-            }
+            .onAppear { populate() }
         }
     }
 
-    private func submit() async {
+    private func populate() {
+        numberOfPeople = booking.numberOfPeople
+        selectedSeater = booking.preferredSeater
+        prefersCNG = booking.prefersCNG
+        customerNotes = booking.customerNotes ?? ""
+
+        // Parse existing travel date
+        let isoFrac = ISO8601DateFormatter()
+        isoFrac.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+        if let date = isoFrac.date(from: booking.travelDate) { travelDate = date; return }
+        let iso = ISO8601DateFormatter()
+        if let date = iso.date(from: booking.travelDate) { travelDate = date; return }
+        let ymd = DateFormatter()
+        ymd.dateFormat = "yyyy-MM-dd"
+        if let date = ymd.date(from: booking.travelDate) { travelDate = date }
+    }
+
+    private func save() async {
         isSubmitting = true; errorMessage = nil
         defer { isSubmitting = false }
         do {
-            let body = CreateBookingRequest(
-                routeId: route.id,
+            let body = UpdateBookingRequest(
                 travelDate: dateFormatter.string(from: travelDate),
                 numberOfPeople: numberOfPeople,
                 preferredSeater: selectedSeater,
                 prefersCNG: prefersCNG,
                 customerNotes: customerNotes.isEmpty ? nil : customerNotes)
             let _: Booking = try await APIClient.shared.perform(
-                "/api/bookings", method: "POST", body: body)
-            didSubmit = true
+                "/api/bookings/my/\(booking.id)", method: "PUT", body: body)
+            await onSaved()
+            dismiss()
         } catch { errorMessage = error.localizedDescription }
     }
-}
-
-#Preview {
-    let route = Route(
-        id: "1", from: "Delhi", to: "Jaipur",
-        prices: [
-            PriceEntry(seaterCapacity: 4, isCNG: false, price: 850),
-            PriceEntry(seaterCapacity: 4, isCNG: true, price: 650),
-            PriceEntry(seaterCapacity: 6, isCNG: false, price: 1200),
-            PriceEntry(seaterCapacity: 7, isCNG: false, price: 1400)
-        ])
-    BookingFormView(route: route).environment(AuthManager())
 }

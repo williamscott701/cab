@@ -15,80 +15,107 @@ struct LoginView: View {
             VStack(spacing: 0) {
                 Spacer()
 
-                // Brand
-                VStack(spacing: 10) {
-                    ZStack {
-                        Circle()
-                            .fill(Color.accentColor.opacity(0.12))
-                            .frame(width: 88, height: 88)
-                        Image(systemName: "car.fill")
-                            .font(.system(size: 38))
-                            .foregroundStyle(.tint)
-                    }
-                    Text("CabBook")
-                        .font(.largeTitle.bold())
-                    Text("Book your ride, hassle-free")
+                // Logo & heading
+                VStack(spacing: 12) {
+                    Image(systemName: "car.fill")
+                        .font(.system(size: 44))
+                        .foregroundStyle(
+                            LinearGradient(
+                                colors: [Color(red: 0.0, green: 0.78, blue: 0.75), Color(red: 0.0, green: 0.68, blue: 0.82)],
+                                startPoint: .leading,
+                                endPoint: .trailing
+                            )
+                        )
+                    Text("Vola Cabs")
+                        .font(.system(size: 32, weight: .bold, design: .rounded))
+                    Text("Book your ride in seconds")
                         .font(.subheadline)
                         .foregroundStyle(.secondary)
                 }
+                .padding(.bottom, 36)
 
-                Spacer().frame(height: 40)
+                VStack(spacing: 28) {
+                    // Fields
+                    VStack(spacing: 16) {
+                        VStack(alignment: .leading, spacing: 8) {
+                            Text("Email")
+                                .font(.subheadline)
+                                .foregroundStyle(.secondary)
+                            TextField("", text: $email, prompt: Text("Enter your email").foregroundStyle(.quaternary))
+                                .keyboardType(.emailAddress)
+                                .textInputAutocapitalization(.never)
+                                .autocorrectionDisabled()
+                                .textContentType(.emailAddress)
+                                .padding(.horizontal, 16)
+                                .padding(.vertical, 14)
+                                .background(Color(.tertiarySystemFill), in: .capsule)
+                        }
 
-                // Field card
-                VStack(spacing: 0) {
-                    TextField("Email", text: $email)
-                        .keyboardType(.emailAddress)
-                        .textInputAutocapitalization(.never)
-                        .autocorrectionDisabled()
-                        .padding(.horizontal, 16)
-                        .padding(.vertical, 14)
-                    Divider().padding(.leading, 16)
-                    SecureField("Password", text: $password)
-                        .padding(.horizontal, 16)
-                        .padding(.vertical, 14)
-                }
-                .background(.background, in: RoundedRectangle(cornerRadius: 12))
-                .overlay {
-                    RoundedRectangle(cornerRadius: 12)
-                        .strokeBorder(Color(.separator), lineWidth: 0.5)
-                }
-
-                // Error
-                if let error {
-                    Text(error)
-                        .font(.footnote)
-                        .foregroundStyle(.red)
-                        .multilineTextAlignment(.center)
-                        .padding(.top, 10)
-                }
-
-                // Button
-                Button { Task { await login() } } label: {
-                    Group {
-                        if isLoading { ProgressView().tint(.white) }
-                        else { Text("Log In").fontWeight(.semibold) }
+                        VStack(alignment: .leading, spacing: 8) {
+                            Text("Password")
+                                .font(.subheadline)
+                                .foregroundStyle(.secondary)
+                            SecureField("", text: $password, prompt: Text("Enter your password").foregroundStyle(.quaternary))
+                                .textContentType(.password)
+                                .padding(.horizontal, 16)
+                                .padding(.vertical, 14)
+                                .background(Color(.tertiarySystemFill), in: .capsule)
+                        }
                     }
-                    .frame(maxWidth: .infinity)
-                    .frame(height: 50)
+
+                    // Error
+                    if let error {
+                        Text(error)
+                            .font(.subheadline)
+                            .foregroundStyle(.red)
+                            .multilineTextAlignment(.center)
+                    }
+
+                    // Sign In button
+                    Button {
+                        Task { await login() }
+                    } label: {
+                        Group {
+                            if isLoading {
+                                ProgressView().tint(.white)
+                            } else {
+                                Text("Sign In")
+                                    .fontWeight(.semibold)
+                            }
+                        }
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 14)
+                    }
+                    .foregroundStyle(.white)
+                    .background(
+                        LinearGradient(
+                            colors: [Color(red: 0.0, green: 0.78, blue: 0.75), Color(red: 0.0, green: 0.68, blue: 0.82)],
+                            startPoint: .leading,
+                            endPoint: .trailing
+                        ),
+                        in: .capsule
+                    )
+                    .disabled(isLoading || email.isEmpty || password.isEmpty)
+                    .opacity(isLoading || email.isEmpty || password.isEmpty ? 0.5 : 1.0)
+
+                    // Sign up link
+                    Button { goSignup = true } label: {
+                        HStack(spacing: 4) {
+                            Text("Don't have an account?")
+                                .foregroundStyle(.secondary)
+                            Text("Sign Up")
+                                .fontWeight(.semibold)
+                                .foregroundStyle(Color(red: 0.0, green: 0.73, blue: 0.78))
+                        }
+                        .font(.subheadline)
+                    }
                 }
-                .buttonStyle(.borderedProminent)
-                .disabled(isLoading || email.isEmpty || password.isEmpty)
-                .clipShape(RoundedRectangle(cornerRadius: 12))
-                .padding(.top, 16)
+                .padding(.horizontal, 24)
 
                 Spacer()
-
-                // Sign up
-                Button { goSignup = true } label: {
-                    HStack(spacing: 4) {
-                        Text("New here?").foregroundStyle(.secondary)
-                        Text("Create an account").fontWeight(.semibold)
-                    }
-                    .font(.subheadline)
-                }
-                .padding(.bottom, 16)
+                Spacer()
             }
-            .padding(.horizontal, 28)
+            .background(Color(.systemGroupedBackground))
             .navigationDestination(isPresented: $goSignup) { SignupView() }
         }
     }

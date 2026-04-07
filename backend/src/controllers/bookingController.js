@@ -1,6 +1,5 @@
 const Booking = require('../models/Booking');
 const Route = require('../models/Route');
-const Cab = require('../models/Cab');
 
 // ── Customer ──────────────────────────────────────────────────────────────────
 
@@ -41,7 +40,6 @@ const getMyBookings = async (req, res) => {
   try {
     const bookings = await Booking.find({ customerId: req.user._id })
       .populate('routeId', 'from to routeType')
-      .populate('assignedCabId')
       .sort({ createdAt: -1 });
     res.json(bookings);
   } catch (err) {
@@ -52,17 +50,62 @@ const getMyBookings = async (req, res) => {
 const getMyBookingById = async (req, res) => {
   try {
     const booking = await Booking.findOne({ _id: req.params.id, customerId: req.user._id })
-      .populate('routeId', 'from to routeType')
-      .populate('assignedCabId');
+      .populate('routeId', 'from to routeType');
     if (!booking) return res.status(404).json({ message: 'Booking not found' });
 
-    // hide cab details until confirmed
+    // Hide driver details until confirmed
     const result = booking.toObject();
     if (!['confirmed', 'completed'].includes(result.status)) {
-      result.assignedCabId = null;
+      result.driverName = null;
+      result.driverPhone = null;
+      result.licensePlate = null;
     }
 
     res.json(result);
+  } catch (err) {
+    res.status(500).json({ message: 'Server error', error: err.message });
+  }
+};
+
+const updateMyBooking = async (req, res) => {
+  try {
+    const booking = await Booking.findOne({ _id: req.params.id, customerId: req.user._id });
+    if (!booking) return res.status(404).json({ message: 'Booking not found' });
+    if (booking.status !== 'pending') {
+      return res.status(400).json({ message: 'Only pending bookings can be edited' });
+    }
+
+    const { travelDate, numberOfPeople, preferredSeater, prefersCNG, customerNotes } = req.body;
+
+    // Recalculate price if cab preference changed
+    const seater = preferredSeater ?? booking.preferredSeater;
+    const cng = prefersCNG ?? booking.prefersCNG;
+    const route = await Route.findById(booking.routeId);
+    if (!route) return res.status(404).json({ message: 'Route not found' });
+
+    const priceEntry = route.prices.find(
+      (p) => p.seaterCapacity === seater && p.isCNG === cng
+    );
+    if (!priceEntry) {
+      return res.status(400).json({
+        message: `No price defined for ${seater}-seater ${cng ? 'CNG' : 'non-CNG'} on this route`,
+      });
+    }
+
+    if (travelDate !== undefined) booking.travelDate = travelDate;
+    if (numberOfPeople !== undefined) booking.numberOfPeople = numberOfPeople;
+    if (preferredSeater !== undefined) booking.preferredSeater = preferredSeater;
+    if (prefersCNG !== undefined) booking.prefersCNG = prefersCNG;
+    if (customerNotes !== undefined) booking.customerNotes = customerNotes;
+    booking.totalAmount = priceEntry.price;
+
+    await booking.save();
+
+    const populated = await booking.populate([
+      { path: 'routeId', select: 'from to routeType prices' },
+    ]);
+
+    res.json(populated);
   } catch (err) {
     res.status(500).json({ message: 'Server error', error: err.message });
   }
@@ -93,7 +136,6 @@ const getAllBookings = async (req, res) => {
     const bookings = await Booking.find(filter)
       .populate('customerId', 'name email phone')
       .populate('routeId', 'from to routeType')
-      .populate('assignedCabId')
       .sort({ createdAt: -1 });
     res.json(bookings);
   } catch (err) {
@@ -105,8 +147,7 @@ const getBookingById = async (req, res) => {
   try {
     const booking = await Booking.findById(req.params.id)
       .populate('customerId', 'name email phone')
-      .populate('routeId', 'from to routeType prices')
-      .populate('assignedCabId');
+      .populate('routeId', 'from to routeType');
     if (!booking) return res.status(404).json({ message: 'Booking not found' });
     res.json(booking);
   } catch (err) {
@@ -116,26 +157,26 @@ const getBookingById = async (req, res) => {
 
 const assignCab = async (req, res) => {
   try {
-    const { cabId } = req.body;
-    if (!cabId) return res.status(400).json({ message: 'cabId is required' });
-
-    const cab = await Cab.findById(cabId);
-    if (!cab || !cab.isActive) return res.status(404).json({ message: 'Cab not found or inactive' });
+    const { driverName, driverPhone, licensePlate } = req.body;
+    if (!driverName || !driverPhone || !licensePlate) {
+      return res.status(400).json({ message: 'driverName, driverPhone, and licensePlate are required' });
+    }
 
     const booking = await Booking.findById(req.params.id);
     if (!booking) return res.status(404).json({ message: 'Booking not found' });
     if (booking.status === 'cancelled') {
-      return res.status(400).json({ message: 'Cannot assign cab to a cancelled booking' });
+      return res.status(400).json({ message: 'Cannot assign to a cancelled booking' });
     }
 
-    booking.assignedCabId = cabId;
+    booking.driverName = driverName.trim();
+    booking.driverPhone = driverPhone.trim();
+    booking.licensePlate = licensePlate.trim().toUpperCase();
     booking.status = 'confirmed';
     await booking.save();
 
     const populated = await booking.populate([
       { path: 'customerId', select: 'name email phone' },
       { path: 'routeId', select: 'from to routeType' },
-      { path: 'assignedCabId' },
     ]);
 
     res.json(populated);
@@ -158,8 +199,7 @@ const updateBookingStatus = async (req, res) => {
       { new: true, runValidators: true }
     )
       .populate('customerId', 'name email phone')
-      .populate('routeId', 'from to routeType')
-      .populate('assignedCabId');
+      .populate('routeId', 'from to routeType');
 
     if (!booking) return res.status(404).json({ message: 'Booking not found' });
     res.json(booking);
@@ -172,6 +212,7 @@ module.exports = {
   createBooking,
   getMyBookings,
   getMyBookingById,
+  updateMyBooking,
   cancelBooking,
   getAllBookings,
   getBookingById,

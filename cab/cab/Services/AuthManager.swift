@@ -9,19 +9,36 @@ final class AuthManager {
     var role: String?
     var currentUser: User?
 
+    private var sessionObserver: Any?
+
     init() {
         guard let token = KeychainManager.getToken(),
               let payload = AuthManager.decodeJWTPayload(token)
-        else { return }
+        else {
+            observeSessionExpired()
+            return
+        }
 
         // Reject expired tokens
         if let exp = payload["exp"] as? Double, exp <= Date().timeIntervalSince1970 {
             KeychainManager.deleteToken()
+            observeSessionExpired()
             return
         }
 
         isLoggedIn = true
         role = payload["role"] as? String
+        observeSessionExpired()
+    }
+
+    private func observeSessionExpired() {
+        sessionObserver = NotificationCenter.default.addObserver(
+            forName: .apiSessionExpired,
+            object: nil,
+            queue: .main
+        ) { [weak self] _ in
+            self?.clearSession()
+        }
     }
 
     // MARK: - Session actions

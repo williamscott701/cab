@@ -21,8 +21,8 @@ const getRoute = async (req, res) => {
 
 const createRoute = async (req, res) => {
   try {
-    const { from, to, routeType, prices } = req.body;
-    const route = await Route.create({ from, to, routeType, prices });
+    const { from, to, prices } = req.body;
+    const route = await Route.create({ from, to, prices });
     res.status(201).json(route);
   } catch (err) {
     res.status(500).json({ message: 'Server error', error: err.message });

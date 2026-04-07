@@ -4,6 +4,7 @@ const {
   createBooking,
   getMyBookings,
   getMyBookingById,
+  updateMyBooking,
   cancelBooking,
   getAllBookings,
   getBookingById,
@@ -34,6 +35,7 @@ router.post(
 
 router.get('/my', authenticate, requireRole('customer'), getMyBookings);
 router.get('/my/:id', authenticate, requireRole('customer'), getMyBookingById);
+router.put('/my/:id', authenticate, requireRole('customer'), updateMyBooking);
 router.patch('/my/:id/cancel', authenticate, requireRole('customer'), cancelBooking);
 
 // Admin routes
@@ -44,7 +46,11 @@ router.patch(
   '/:id/assign',
   authenticate,
   requireRole('admin'),
-  [body('cabId').notEmpty().withMessage('cabId is required')],
+  [
+    body('driverName').trim().notEmpty().withMessage('driverName is required'),
+    body('driverPhone').trim().notEmpty().withMessage('driverPhone is required'),
+    body('licensePlate').trim().notEmpty().withMessage('licensePlate is required'),
+  ],
   validate,
   assignCab
 );

@@ -20,6 +20,28 @@ struct AssignCabSheet: View {
     var body: some View {
         NavigationStack {
             Form {
+                Section {
+                    VStack(spacing: 8) {
+                        Image(systemName: "car.badge.gearshape")
+                            .font(.system(size: 32, weight: .medium))
+                            .foregroundStyle(
+                                LinearGradient(
+                                    colors: [Color(red: 0.0, green: 0.78, blue: 0.75), Color(red: 0.0, green: 0.68, blue: 0.82)],
+                                    startPoint: .leading,
+                                    endPoint: .trailing
+                                )
+                            )
+                            .frame(width: 56, height: 56)
+                            .background(Color(red: 0.0, green: 0.73, blue: 0.78).opacity(0.12), in: .circle)
+
+                        Text("Assign a Driver")
+                            .font(.headline)
+                    }
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 8)
+                    .listRowBackground(Color.clear)
+                }
+
                 Section("Driver Details") {
                     TextField("Driver Name", text: $driverName)
                         .textContentType(.name)
@@ -36,9 +58,9 @@ struct AssignCabSheet: View {
 
                 if let errorMessage {
                     Section {
-                        Label(errorMessage, systemImage: "exclamationmark.circle.fill")
+                        Label(errorMessage, systemImage: "exclamationmark.triangle.fill")
                             .foregroundStyle(.red)
-                            .font(.callout)
+                            .font(.subheadline)
                     }
                 }
 
@@ -46,16 +68,31 @@ struct AssignCabSheet: View {
                     Button {
                         Task { await assign() }
                     } label: {
-                        HStack(spacing: 8) {
-                            if isAssigning { ProgressView().scaleEffect(0.85) }
-                            Text(isAssigning ? "Assigning…" : "Confirm Assignment")
-                                .fontWeight(.semibold)
-                                .frame(maxWidth: .infinity)
+                        HStack {
+                            Spacer()
+                            if isAssigning {
+                                ProgressView().tint(.white)
+                            } else {
+                                Text("Confirm Assignment")
+                                    .fontWeight(.semibold)
+                            }
+                            Spacer()
                         }
-                        .frame(height: 44)
+                        .padding(.vertical, 14)
                     }
-                    .buttonStyle(.borderedProminent)
+                    .foregroundStyle(.white)
+                    .background(
+                        LinearGradient(
+                            colors: [Color(red: 0.0, green: 0.78, blue: 0.75), Color(red: 0.0, green: 0.68, blue: 0.82)],
+                            startPoint: .leading,
+                            endPoint: .trailing
+                        ),
+                        in: .capsule
+                    )
                     .disabled(!isFormValid || isAssigning)
+                    .opacity(!isFormValid || isAssigning ? 0.5 : 1.0)
+                    .listRowInsets(EdgeInsets(top: 8, leading: 16, bottom: 8, trailing: 16))
+                    .listRowBackground(Color.clear)
                 }
             }
             .navigationTitle("Assign Cab")
@@ -66,7 +103,7 @@ struct AssignCabSheet: View {
                 }
             }
         }
-        .presentationDetents([.medium])
+        .presentationDetents([.medium, .large])
     }
 
     private func assign() async {
@@ -85,33 +122,6 @@ struct AssignCabSheet: View {
             )
             onAssigned()
         } catch { errorMessage = error.localizedDescription }
-    }
-}
-
-// MARK: - Cab Row (used in CabListView)
-
-struct CabRow: View {
-    let cab: Cab
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 3) {
-            HStack {
-                Text(cab.driverName).font(.headline)
-                if !cab.isActive {
-                    Text("Inactive")
-                        .font(.caption.bold())
-                        .foregroundStyle(.secondary)
-                        .padding(.horizontal, 6)
-                        .padding(.vertical, 2)
-                        .background(Color(.systemGray5))
-                        .clipShape(Capsule())
-                }
-            }
-            Text("\(cab.licensePlate) · \(cab.driverPhone)")
-                .font(.subheadline)
-                .foregroundStyle(.secondary)
-        }
-        .padding(.vertical, 2)
     }
 }
 

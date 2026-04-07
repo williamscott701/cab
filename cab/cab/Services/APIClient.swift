@@ -1,5 +1,11 @@
 import Foundation
 
+// MARK: - Session expired notification
+
+extension Notification.Name {
+    static let apiSessionExpired = Notification.Name("apiSessionExpired")
+}
+
 // MARK: - Errors
 
 enum APIError: LocalizedError {
@@ -119,7 +125,10 @@ actor APIClient {
         guard let http = response as? HTTPURLResponse else {
             throw APIError.unknown(URLError(.badServerResponse))
         }
-        if http.statusCode == 401 { throw APIError.unauthorized }
+        if http.statusCode == 401 {
+            NotificationCenter.default.post(name: .apiSessionExpired, object: nil)
+            throw APIError.unauthorized
+        }
         guard (200..<300).contains(http.statusCode) else {
             struct ErrorBody: Decodable { let message: String? }
             let message = (try? JSONDecoder().decode(ErrorBody.self, from: data))?.message

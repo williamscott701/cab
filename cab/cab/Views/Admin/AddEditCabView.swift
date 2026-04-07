@@ -18,41 +18,61 @@ struct AddEditCabView: View {
     @State private var isSaving = false
     @State private var errorMessage: String?
 
-    private let seaterOptions = [4, 6, 7]
-
     var isEditing: Bool { cab != nil }
+
+    private var isFormValid: Bool {
+        !driverName.trimmingCharacters(in: .whitespaces).isEmpty &&
+        !driverPhone.trimmingCharacters(in: .whitespaces).isEmpty &&
+        !vehicleModel.trimmingCharacters(in: .whitespaces).isEmpty &&
+        !licensePlate.trimmingCharacters(in: .whitespaces).isEmpty &&
+        !color.trimmingCharacters(in: .whitespaces).isEmpty
+    }
 
     var body: some View {
         NavigationStack {
             Form {
                 Section("Driver") {
                     TextField("Driver Name", text: $driverName)
-                    TextField("Driver Phone", text: $driverPhone)
+                        .textContentType(.name)
+                    TextField("Phone Number", text: $driverPhone)
                         .keyboardType(.phonePad)
+                        .textContentType(.telephoneNumber)
                 }
 
                 Section("Vehicle") {
-                    TextField("Vehicle Model", text: $vehicleModel)
-                    TextField("License Plate", text: $licensePlate)
+                    TextField("Model (e.g. Maruti Swift)", text: $vehicleModel)
+                    TextField("License Plate (e.g. DL 01 AB 1234)", text: $licensePlate)
+                        .autocorrectionDisabled()
                         .textInputAutocapitalization(.characters)
                     TextField("Color", text: $color)
+                        .textContentType(.none)
                 }
 
-                Section("Specifications") {
+                Section("Cab Type") {
                     Picker("Seater Capacity", selection: $seaterCapacity) {
-                        ForEach(seaterOptions, id: \.self) { seats in
-                            Text("\(seats)-Seater").tag(seats)
+                        Text("4-Seater").tag(4)
+                        Text("6-Seater").tag(6)
+                        Text("7-Seater").tag(7)
+                    }
+
+                    Toggle(isOn: $isCNG) {
+                        Label("CNG Vehicle", systemImage: "leaf.fill")
+                    }
+                }
+
+                if isEditing {
+                    Section("Status") {
+                        Toggle(isOn: $isActive) {
+                            Label("Active", systemImage: "checkmark.circle.fill")
                         }
                     }
-                    Toggle("CNG", isOn: $isCNG)
-                    Toggle("Active", isOn: $isActive)
                 }
 
                 if let errorMessage {
                     Section {
-                        Text(errorMessage)
+                        Label(errorMessage, systemImage: "exclamationmark.triangle.fill")
                             .foregroundStyle(.red)
-                            .font(.callout)
+                            .font(.subheadline)
                     }
                 }
             }
@@ -69,17 +89,13 @@ struct AddEditCabView: View {
                         Button("Save") {
                             Task { await save() }
                         }
+                        .fontWeight(.semibold)
                         .disabled(!isFormValid)
                     }
                 }
             }
             .onAppear { populate() }
         }
-    }
-
-    private var isFormValid: Bool {
-        !driverName.isEmpty && !driverPhone.isEmpty && !vehicleModel.isEmpty
-            && !licensePlate.isEmpty && !color.isEmpty
     }
 
     private func populate() {
@@ -95,22 +111,22 @@ struct AddEditCabView: View {
     }
 
     private func save() async {
-        isSaving = true
-        errorMessage = nil
+        isSaving = true; errorMessage = nil
         defer { isSaving = false }
 
         struct Body: Encodable {
             let driverName, driverPhone, vehicleModel, licensePlate, color: String
             let seaterCapacity: Int
-            let isCNG, isActive: Bool
+            let isCNG: Bool
+            let isActive: Bool
         }
 
         let body = Body(
-            driverName: driverName,
-            driverPhone: driverPhone,
-            vehicleModel: vehicleModel,
-            licensePlate: licensePlate,
-            color: color,
+            driverName: driverName.trimmingCharacters(in: .whitespaces),
+            driverPhone: driverPhone.trimmingCharacters(in: .whitespaces),
+            vehicleModel: vehicleModel.trimmingCharacters(in: .whitespaces),
+            licensePlate: licensePlate.trimmingCharacters(in: .whitespaces).uppercased(),
+            color: color.trimmingCharacters(in: .whitespaces),
             seaterCapacity: seaterCapacity,
             isCNG: isCNG,
             isActive: isActive

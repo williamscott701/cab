@@ -11,44 +11,74 @@ struct ProfileView: View {
 
     var body: some View {
         NavigationStack {
-            Form {
-                // Avatar + name
+            List {
+                // Avatar header
                 if let user = authManager.currentUser {
                     Section {
-                        HStack(spacing: 14) {
-                            ZStack {
-                                Circle()
-                                    .fill(Color.accentColor.opacity(0.15))
-                                    .frame(width: 54, height: 54)
-                                Text(user.name.prefix(1).uppercased())
-                                    .font(.system(size: 22, weight: .bold))
-                                    .foregroundStyle(.tint)
-                            }
-                            VStack(alignment: .leading, spacing: 2) {
-                                Text(user.name).font(.headline)
-                                Text(user.isAdmin ? "Admin" : "Customer")
-                                    .font(.subheadline)
-                                    .foregroundStyle(.secondary)
-                            }
+                        VStack(spacing: 12) {
+                            Text(user.name.prefix(1).uppercased())
+                                .font(.system(size: 28, weight: .bold, design: .rounded))
+                                .foregroundStyle(.white)
+                                .frame(width: 72, height: 72)
+                                .background(
+                                    LinearGradient(
+                                        colors: [Color(red: 0.0, green: 0.78, blue: 0.75), Color(red: 0.0, green: 0.68, blue: 0.82)],
+                                        startPoint: .topLeading,
+                                        endPoint: .bottomTrailing
+                                    ),
+                                    in: .circle
+                                )
+
+                            Text(user.name)
+                                .font(.title3.weight(.semibold))
                         }
-                        .padding(.vertical, 4)
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 12)
+                        .listRowBackground(Color.clear)
                     }
 
                     Section("Account") {
-                        LabeledContent("Email", value: user.email)
-                        LabeledContent("Phone", value: user.phone)
+                        LabeledContent {
+                            Text(user.email)
+                        } label: {
+                            Label("Email", systemImage: "envelope.fill")
+                        }
+                        LabeledContent {
+                            Text(user.phone)
+                        } label: {
+                            Label("Phone", systemImage: "phone.fill")
+                        }
                     }
                 } else {
                     Section {
-                        ProgressView().frame(maxWidth: .infinity, alignment: .center)
+                        ProgressView()
+                            .frame(maxWidth: .infinity, alignment: .center)
+                            .padding(.vertical, 24)
                     }
                 }
 
                 if let errorMessage {
                     Section {
-                        Label(errorMessage, systemImage: "exclamationmark.circle.fill")
+                        Label(errorMessage, systemImage: "exclamationmark.triangle.fill")
                             .foregroundStyle(.red)
-                            .font(.callout)
+                            .font(.subheadline)
+                    }
+                }
+
+                Section("Support & Privacy") {
+                    Button {
+                        if let url = URL(string: "mailto:williamscott701@gmail.com") {
+                            UIApplication.shared.open(url)
+                        }
+                    } label: {
+                        Label("Contact Support", systemImage: "envelope.fill")
+                    }
+                    Button {
+                        if let url = URL(string: "mailto:williamscott701@gmail.com?subject=Privacy%20Request") {
+                            UIApplication.shared.open(url)
+                        }
+                    } label: {
+                        Label("Privacy Policy", systemImage: "hand.raised.fill")
                     }
                 }
 
@@ -75,6 +105,7 @@ struct ProfileView: View {
                     }
                 }
             }
+            .listStyle(.insetGrouped)
             .navigationTitle("Profile")
             .task {
                 if authManager.currentUser == nil {

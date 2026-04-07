@@ -59,7 +59,9 @@ struct Booking: Codable, Identifiable {
     let preferredSeater: Int
     let prefersCNG: Bool
     let status: String
-    let assignedCabId: IDOrObject<Cab>?
+    let driverName: String?
+    let driverPhone: String?
+    let licensePlate: String?
     let totalAmount: Double
     let customerNotes: String?
     let createdAt: String
@@ -67,35 +69,59 @@ struct Booking: Codable, Identifiable {
     enum CodingKeys: String, CodingKey {
         case id = "_id"
         case customerId, routeId, travelDate, numberOfPeople, preferredSeater, prefersCNG
-        case status, assignedCabId, totalAmount, customerNotes, createdAt
+        case status, driverName, driverPhone, licensePlate, totalAmount, customerNotes, createdAt
     }
 
     var route: Route? { routeId.object }
-    var assignedCab: Cab? { assignedCabId?.object }
     var customer: User? { customerId.object }
 
     var statusEnum: BookingStatus { BookingStatus(rawValue: status) ?? .pending }
 
-    /// Converts "yyyy-MM-dd" or ISO 8601 ("2026-04-07T00:00:00.000Z") → "Apr 7, 2026"
-    var formattedDate: String {
-        let display = DateFormatter()
-        display.dateStyle = .medium
-        display.timeStyle = .none
-        // ISO 8601 (what MongoDB returns)
+    /// Parses the travelDate string into a Date, handling multiple formats.
+    private var parsedDate: Date? {
+        // ISO 8601 with fractional seconds: "2026-04-07T00:00:00.000Z"
+        let isoFrac = ISO8601DateFormatter()
+        isoFrac.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+        if let date = isoFrac.date(from: travelDate) { return date }
+        // ISO 8601 without fractional seconds
         let iso = ISO8601DateFormatter()
-        if let date = iso.date(from: travelDate) { return display.string(from: date) }
-        // Plain date string fallback
+        if let date = iso.date(from: travelDate) { return date }
+        // Plain date: "2026-04-07"
         let ymd = DateFormatter()
         ymd.dateFormat = "yyyy-MM-dd"
-        if let date = ymd.date(from: travelDate) { return display.string(from: date) }
-        return travelDate
+        if let date = ymd.date(from: travelDate) { return date }
+        return nil
+    }
+
+    /// Full date for detail views: "Apr 7, 2026 · 12:00 AM"
+    var formattedDate: String {
+        guard let date = parsedDate else { return travelDate }
+        let f = DateFormatter()
+        f.dateFormat = "MMM d, yyyy · h:mm a"
+        return f.string(from: date)
+    }
+
+    /// Short date for list rows: "7 Apr, 12:00 AM"
+    var briefDate: String {
+        guard let date = parsedDate else { return travelDate }
+        let f = DateFormatter()
+        f.dateFormat = "d MMM, h:mm a"
+        return f.string(from: date)
     }
 }
 
-// MARK: - Request body
+// MARK: - Request bodies
 
 struct CreateBookingRequest: Encodable {
     let routeId: String
+    let travelDate: String
+    let numberOfPeople: Int
+    let preferredSeater: Int
+    let prefersCNG: Bool
+    let customerNotes: String?
+}
+
+struct UpdateBookingRequest: Encodable {
     let travelDate: String
     let numberOfPeople: Int
     let preferredSeater: Int

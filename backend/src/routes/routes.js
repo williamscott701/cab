@@ -26,9 +26,6 @@ router.post(
   [
     body('from').trim().notEmpty().withMessage('From location is required'),
     body('to').trim().notEmpty().withMessage('To location is required'),
-    body('routeType')
-      .isIn(['city_to_airport', 'airport_to_city', 'city_to_city'])
-      .withMessage('Invalid route type'),
     priceValidation,
   ],
   validate,

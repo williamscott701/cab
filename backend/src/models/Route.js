@@ -15,8 +15,7 @@ const routeSchema = new mongoose.Schema(
     to: { type: String, required: true, trim: true },
     routeType: {
       type: String,
-      required: true,
-      enum: ['city_to_airport', 'airport_to_city', 'city_to_city'],
+      default: 'city_to_city',
     },
     prices: { type: [priceEntrySchema], required: true },
     isActive: { type: Boolean, default: true },

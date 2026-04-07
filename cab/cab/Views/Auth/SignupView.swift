@@ -11,68 +11,98 @@ struct SignupView: View {
     @State private var isLoading = false
     @State private var error: String?
 
+    private let tealGradient = LinearGradient(
+        colors: [Color(red: 0.0, green: 0.78, blue: 0.75), Color(red: 0.0, green: 0.68, blue: 0.82)],
+        startPoint: .leading,
+        endPoint: .trailing
+    )
+
     var body: some View {
         ScrollView {
-            VStack(spacing: 20) {
-                // Field card
-                VStack(spacing: 0) {
-                    TextField("Full name", text: $name)
-                        .textContentType(.name)
-                        .padding(.horizontal, 16)
-                        .padding(.vertical, 14)
-                    Divider().padding(.leading, 16)
+            VStack(spacing: 28) {
+                // Fields
+                VStack(spacing: 16) {
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text("Full Name")
+                            .font(.subheadline)
+                            .foregroundStyle(.secondary)
+                        TextField("", text: $name, prompt: Text("Enter your name").foregroundStyle(.quaternary))
+                            .textContentType(.name)
+                            .padding(.horizontal, 16)
+                            .padding(.vertical, 14)
+                            .background(Color(.tertiarySystemFill), in: .capsule)
+                    }
 
-                    TextField("Email", text: $email)
-                        .keyboardType(.emailAddress)
-                        .textInputAutocapitalization(.never)
-                        .autocorrectionDisabled()
-                        .textContentType(.emailAddress)
-                        .padding(.horizontal, 16)
-                        .padding(.vertical, 14)
-                    Divider().padding(.leading, 16)
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text("Email")
+                            .font(.subheadline)
+                            .foregroundStyle(.secondary)
+                        TextField("", text: $email, prompt: Text("Enter your email").foregroundStyle(.quaternary))
+                            .keyboardType(.emailAddress)
+                            .textInputAutocapitalization(.never)
+                            .autocorrectionDisabled()
+                            .textContentType(.emailAddress)
+                            .padding(.horizontal, 16)
+                            .padding(.vertical, 14)
+                            .background(Color(.tertiarySystemFill), in: .capsule)
+                    }
 
-                    TextField("Phone number", text: $phone)
-                        .keyboardType(.phonePad)
-                        .textContentType(.telephoneNumber)
-                        .padding(.horizontal, 16)
-                        .padding(.vertical, 14)
-                    Divider().padding(.leading, 16)
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text("Phone Number")
+                            .font(.subheadline)
+                            .foregroundStyle(.secondary)
+                        TextField("", text: $phone, prompt: Text("10-digit mobile number").foregroundStyle(.quaternary))
+                            .keyboardType(.phonePad)
+                            .textContentType(.telephoneNumber)
+                            .padding(.horizontal, 16)
+                            .padding(.vertical, 14)
+                            .background(Color(.tertiarySystemFill), in: .capsule)
+                    }
 
-                    SecureField("Password (min. 6 chars)", text: $password)
-                        .textContentType(.newPassword)
-                        .padding(.horizontal, 16)
-                        .padding(.vertical, 14)
-                }
-                .background(.background, in: RoundedRectangle(cornerRadius: 12))
-                .overlay {
-                    RoundedRectangle(cornerRadius: 12)
-                        .strokeBorder(Color(.separator), lineWidth: 0.5)
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text("Password")
+                            .font(.subheadline)
+                            .foregroundStyle(.secondary)
+                        SecureField("", text: $password, prompt: Text("Min. 6 characters").foregroundStyle(.quaternary))
+                            .textContentType(.newPassword)
+                            .padding(.horizontal, 16)
+                            .padding(.vertical, 14)
+                            .background(Color(.tertiarySystemFill), in: .capsule)
+                    }
                 }
 
                 if let error {
                     Text(error)
-                        .font(.footnote)
+                        .font(.subheadline)
                         .foregroundStyle(.red)
                         .multilineTextAlignment(.center)
                 }
 
-                Button { Task { await signup() } } label: {
+                Button {
+                    Task { await signup() }
+                } label: {
                     Group {
-                        if isLoading { ProgressView().tint(.white) }
-                        else { Text("Create Account").fontWeight(.semibold) }
+                        if isLoading {
+                            ProgressView().tint(.white)
+                        } else {
+                            Text("Create Account")
+                                .fontWeight(.semibold)
+                        }
                     }
                     .frame(maxWidth: .infinity)
-                    .frame(height: 50)
+                    .padding(.vertical, 14)
                 }
-                .buttonStyle(.borderedProminent)
+                .foregroundStyle(.white)
+                .background(tealGradient, in: .capsule)
                 .disabled(isLoading || name.isEmpty || email.isEmpty || phone.isEmpty || password.count < 6)
-                .clipShape(RoundedRectangle(cornerRadius: 12))
+                .opacity(isLoading || name.isEmpty || email.isEmpty || phone.isEmpty || password.count < 6 ? 0.5 : 1.0)
             }
-            .padding(.horizontal, 20)
-            .padding(.top, 8)
-            .padding(.bottom, 32)
+            .padding(.horizontal, 24)
+            .padding(.top, 16)
         }
+        .background(Color(.systemGroupedBackground))
         .navigationTitle("Create Account")
+        .navigationBarTitleDisplayMode(.large)
     }
 
     private func signup() async {

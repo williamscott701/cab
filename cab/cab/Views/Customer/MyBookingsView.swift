@@ -3,7 +3,7 @@ import SwiftUI
 struct MyBookingsView: View {
 
     @State private var bookings: [Booking] = []
-    @State private var isLoading = false
+    @State private var isLoading = true
     @State private var error: String?
 
     var body: some View {
@@ -15,7 +15,7 @@ struct MyBookingsView: View {
                     ContentUnavailableView("Couldn't Load", systemImage: "wifi.slash",
                                           description: Text(error))
                 } else if bookings.isEmpty {
-                    ContentUnavailableView("No Bookings", systemImage: "ticket",
+                    ContentUnavailableView("No Bookings Yet", systemImage: "ticket",
                                           description: Text("Book your first ride from the Routes tab."))
                 } else {
                     List(bookings) { booking in
@@ -48,34 +48,45 @@ struct BookingRow: View {
     let booking: Booking
 
     var body: some View {
-        HStack(spacing: 12) {
-            // Status color stripe
-            RoundedRectangle(cornerRadius: 2)
-                .fill(statusColor)
-                .frame(width: 4)
-                .padding(.vertical, 2)
+        HStack(spacing: 10) {
+            Image(systemName: statusIcon)
+                .font(.system(size: 14, weight: .semibold))
+                .foregroundStyle(statusColor)
+                .frame(width: 32, height: 32)
+                .background(statusColor.opacity(0.12), in: .rect(cornerRadius: 8))
 
-            VStack(alignment: .leading, spacing: 4) {
-                HStack {
-                    if let route = booking.route {
-                        Text("\(route.from) → \(route.to)").font(.headline)
-                    } else {
-                        Text("Booking").font(.headline)
-                    }
-                    Spacer()
-                    StatusBadge(status: booking.statusEnum)
+            VStack(alignment: .leading, spacing: 2) {
+                if let route = booking.route {
+                    Text("\(route.from) → \(route.to)")
+                        .font(.subheadline.weight(.medium))
+                } else {
+                    Text("Booking")
+                        .font(.subheadline.weight(.medium))
                 }
-                HStack(spacing: 12) {
-                    Label(booking.formattedDate, systemImage: "calendar")
+
+                HStack(spacing: 8) {
+                    Text(booking.briefDate)
                     Text("₹\(Int(booking.totalAmount))")
                         .foregroundStyle(.tint)
-                        .fontWeight(.medium)
                 }
                 .font(.caption)
                 .foregroundStyle(.secondary)
             }
+
+            Spacer()
+
+            StatusBadge(status: booking.statusEnum)
         }
         .padding(.vertical, 2)
+    }
+
+    private var statusIcon: String {
+        switch booking.statusEnum {
+        case .pending:   return "clock.fill"
+        case .confirmed: return "car.fill"
+        case .completed: return "checkmark.seal.fill"
+        case .cancelled: return "xmark.circle.fill"
+        }
     }
 
     private var statusColor: Color {
@@ -83,12 +94,12 @@ struct BookingRow: View {
         case .pending:   return .orange
         case .confirmed: return .blue
         case .completed: return .green
-        case .cancelled: return Color(.systemGray4)
+        case .cancelled: return .secondary
         }
     }
 }
 
-// MARK: - Status Badge (shared across all views)
+// MARK: - Status Badge
 
 struct StatusBadge: View {
     let status: BookingStatus
@@ -98,27 +109,17 @@ struct StatusBadge: View {
         case .pending:   return .orange
         case .confirmed: return .blue
         case .completed: return .green
-        case .cancelled: return .red
-        }
-    }
-
-    var icon: String {
-        switch status {
-        case .pending:   return "clock"
-        case .confirmed: return "checkmark.circle.fill"
-        case .completed: return "checkmark.seal.fill"
-        case .cancelled: return "xmark.circle.fill"
+        case .cancelled: return .secondary
         }
     }
 
     var body: some View {
-        Label(status.displayName, systemImage: icon)
-            .font(.caption.bold())
+        Text(status.displayName)
+            .font(.caption2.weight(.bold))
             .padding(.horizontal, 8)
-            .padding(.vertical, 3)
-            .background(color.opacity(0.15))
+            .padding(.vertical, 4)
+            .background(color.opacity(0.12), in: .capsule)
             .foregroundStyle(color)
-            .clipShape(Capsule())
     }
 }
 

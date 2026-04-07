@@ -6,8 +6,8 @@ const seedAdmin = require('./config/seed');
 
 const authRoutes = require('./routes/auth');
 const routeRoutes = require('./routes/routes');
-const cabRoutes = require('./routes/cabs');
 const bookingRoutes = require('./routes/bookings');
+const cabRoutes = require('./routes/cabs');
 
 const app = express();
 
@@ -16,8 +16,8 @@ app.use(express.json());
 
 app.use('/api/auth', authRoutes);
 app.use('/api/routes', routeRoutes);
-app.use('/api/cabs', cabRoutes);
 app.use('/api/bookings', bookingRoutes);
+app.use('/api/cabs', cabRoutes);
 
 app.get('/api/health', (_req, res) => res.json({ status: 'ok' }));
 

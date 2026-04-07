@@ -9,12 +9,9 @@ struct AddEditRouteView: View {
 
     @State private var from = ""
     @State private var to = ""
-    @State private var routeType = "city_to_airport"
     @State private var prices: [EditablePriceEntry] = Self.defaultPrices()
     @State private var isSaving = false
     @State private var errorMessage: String?
-
-    private let routeTypes = ["city_to_airport", "airport_to_city"]
 
     var isEditing: Bool { route != nil }
 
@@ -24,18 +21,31 @@ struct AddEditRouteView: View {
                 Section("Route") {
                     TextField("From", text: $from)
                     TextField("To", text: $to)
-                    Picker("Route Type", selection: $routeType) {
-                        Text("City → Airport").tag("city_to_airport")
-                        Text("Airport → City").tag("airport_to_city")
-                    }
                 }
 
                 Section("Price Matrix") {
                     ForEach($prices) { $entry in
                         HStack {
-                            Text("\(entry.seaterCapacity)-Seater \(entry.isCNG ? "(CNG)" : "")")
-                                .frame(maxWidth: .infinity, alignment: .leading)
-                                .font(.subheadline)
+                            Label {
+                                Text("\(entry.seaterCapacity)-Seater")
+                                    .font(.subheadline)
+                            } icon: {
+                                Image(systemName: "car.fill")
+                                    .foregroundStyle(.secondary)
+                                    .font(.caption)
+                            }
+
+                            if entry.isCNG {
+                                Text("CNG")
+                                    .font(.caption2.weight(.bold))
+                                    .padding(.horizontal, 6)
+                                    .padding(.vertical, 2)
+                                    .background(.green.opacity(0.12), in: .capsule)
+                                    .foregroundStyle(.green)
+                            }
+
+                            Spacer()
+
                             TextField("₹", value: $entry.price, format: .number)
                                 .keyboardType(.decimalPad)
                                 .multilineTextAlignment(.trailing)
@@ -47,9 +57,9 @@ struct AddEditRouteView: View {
 
                 if let errorMessage {
                     Section {
-                        Text(errorMessage)
+                        Label(errorMessage, systemImage: "exclamationmark.triangle.fill")
                             .foregroundStyle(.red)
-                            .font(.callout)
+                            .font(.subheadline)
                     }
                 }
             }
@@ -66,6 +76,7 @@ struct AddEditRouteView: View {
                         Button("Save") {
                             Task { await save() }
                         }
+                        .fontWeight(.semibold)
                         .disabled(!isFormValid)
                     }
                 }
@@ -82,8 +93,6 @@ struct AddEditRouteView: View {
         guard let route else { return }
         from = route.from
         to = route.to
-        routeType = route.routeType
-        // Merge existing prices into the editable list
         prices = Self.defaultPrices().map { entry in
             if let existing = route.prices?.first(where: { $0.seaterCapacity == entry.seaterCapacity && $0.isCNG == entry.isCNG }) {
                 return EditablePriceEntry(seaterCapacity: existing.seaterCapacity, isCNG: existing.isCNG, price: existing.price)
@@ -113,14 +122,13 @@ struct AddEditRouteView: View {
             let price: Double
         }
         struct Body: Encodable {
-            let from, to, routeType: String
+            let from, to: String
             let prices: [PriceBody]
         }
 
         let body = Body(
             from: from,
             to: to,
-            routeType: routeType,
             prices: prices.map { PriceBody(seaterCapacity: $0.seaterCapacity, isCNG: $0.isCNG, price: $0.price) }
         )
 
