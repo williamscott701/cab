@@ -91,7 +91,7 @@ actor APIClient {
         } catch {
             throw mapURLError(error)
         }
-        try validate(response: response, data: data)
+        try validate(response: response, data: data, authenticated: authenticated)
 
         do {
             return try decoder.decode(T.self, from: data)
@@ -122,25 +122,30 @@ actor APIClient {
         } catch {
             throw mapURLError(error)
         }
-        try validate(response: response, data: data)
+        try validate(response: response, data: data, authenticated: authenticated)
     }
 
     // MARK: - Validation helper
 
-    private func validate(response: URLResponse, data: Data) throws {
+    private func validate(response: URLResponse, data: Data, authenticated: Bool) throws {
         guard let http = response as? HTTPURLResponse else {
             throw APIError.unknown("Bad server response.")
         }
-        if http.statusCode == 401 {
-            Task { @MainActor in
-                NotificationCenter.default.post(name: .apiSessionExpired, object: nil)
-            }
-            throw APIError.unauthorized
-        }
         guard (200..<300).contains(http.statusCode) else {
             struct ErrorBody: Decodable { let message: String? }
-            let message = (try? JSONDecoder().decode(ErrorBody.self, from: data))?.message
-                ?? HTTPURLResponse.localizedString(forStatusCode: http.statusCode)
+            let serverMessage = (try? JSONDecoder().decode(ErrorBody.self, from: data))?.message
+
+            if http.statusCode == 401 {
+                if authenticated {
+                    Task { @MainActor in
+                        NotificationCenter.default.post(name: .apiSessionExpired, object: nil)
+                    }
+                    throw APIError.unauthorized
+                }
+                throw APIError.serverError(401, serverMessage ?? "Invalid credentials")
+            }
+
+            let message = serverMessage ?? HTTPURLResponse.localizedString(forStatusCode: http.statusCode)
             throw APIError.serverError(http.statusCode, message)
         }
     }
