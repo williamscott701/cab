@@ -24,6 +24,10 @@ struct Route: Codable, Identifiable {
     }
 
     var displayRouteType: String {
-        routeType == "city_to_airport" ? "City → Airport" : "Airport → City"
+        switch routeType {
+        case "city_to_airport": return "City → Airport"
+        case "airport_to_city": return "Airport → City"
+        default:                return "City → City"
+        }
     }
 }

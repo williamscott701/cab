@@ -6,7 +6,7 @@ struct User: Codable, Identifiable {
     let email: String
     let phone: String
     let role: String
-    let createdAt: String
+    let createdAt: String?
 
     var isAdmin: Bool { role == "admin" }
     var isCustomer: Bool { role == "customer" }

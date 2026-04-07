@@ -26,7 +26,6 @@ enum APIError: LocalizedError {
 
 struct LoginResponse: Decodable {
     let token: String
-    let role: String
     let user: User
 }
 
@@ -42,7 +41,7 @@ actor APIClient {
 
     static let shared = APIClient()
 
-    private let baseURL = "http://localhost:3000"
+    private let baseURL = "https://sea-lion-app-f62aj.ondigitalocean.app"
 
     private let session: URLSession = {
         let cfg = URLSessionConfiguration.default
