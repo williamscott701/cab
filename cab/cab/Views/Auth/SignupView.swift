@@ -101,18 +101,39 @@ struct SignupView: View {
             .padding(.top, 16)
         }
         .background(Color(.systemGroupedBackground))
+        .scrollDismissesKeyboard(.interactively)
         .navigationTitle("Create Account")
         .navigationBarTitleDisplayMode(.large)
     }
 
+    private var trimmedName: String { name.trimmingCharacters(in: .whitespacesAndNewlines) }
+    private var trimmedEmail: String { email.trimmingCharacters(in: .whitespacesAndNewlines).lowercased() }
+    private var trimmedPhone: String { phone.trimmingCharacters(in: .whitespacesAndNewlines) }
+
     private func signup() async {
+        let nm = trimmedName, em = trimmedEmail, ph = trimmedPhone
+
+        guard nm.count >= 2 else {
+            error = "Name must be at least 2 characters."; return
+        }
+        guard em.contains("@"), em.contains(".") else {
+            error = "Please enter a valid email address."; return
+        }
+        let digits = ph.filter(\.isNumber)
+        guard digits.count == 10 else {
+            error = "Please enter a valid 10-digit phone number."; return
+        }
+        guard password.count >= 6 else {
+            error = "Password must be at least 6 characters."; return
+        }
+
         isLoading = true; error = nil
         defer { isLoading = false }
         do {
             struct Body: Encodable { let name, email, phone, password: String }
             let r: LoginResponse = try await APIClient.shared.perform(
                 "/api/auth/signup", method: "POST",
-                body: Body(name: name, email: email, phone: phone, password: password), authenticated: false)
+                body: Body(name: nm, email: em, phone: ph, password: password), authenticated: false)
             authManager.login(token: r.token, user: r.user)
         } catch { self.error = error.localizedDescription }
     }

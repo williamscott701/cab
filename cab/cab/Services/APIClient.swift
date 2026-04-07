@@ -8,37 +8,31 @@ extension Notification.Name {
 
 // MARK: - Errors
 
-enum APIError: LocalizedError {
+enum APIError: LocalizedError, Sendable {
     case invalidURL
     case noData
     case unauthorized
     case serverError(Int, String)
-    case decodingError(Error)
-    case unknown(Error)
+    case decodingFailed
+    case unknown(String)
 
     var errorDescription: String? {
         switch self {
-        case .invalidURL:               return "Invalid URL."
-        case .noData:                   return "No data received."
+        case .invalidURL:               return "Something went wrong. Please try again."
+        case .noData:                   return "No data received from server."
         case .unauthorized:             return "Session expired. Please log in again."
         case .serverError(_, let msg):  return msg
-        case .decodingError(let e):     return "Failed to parse response: \(e.localizedDescription)"
-        case .unknown(let e):           return e.localizedDescription
+        case .decodingFailed:           return "Something went wrong. Please try again."
+        case .unknown(let msg):         return msg
         }
     }
 }
 
 // MARK: - Login response
 
-struct LoginResponse: Decodable {
+struct LoginResponse: Decodable, Sendable {
     let token: String
     let user: User
-}
-
-// MARK: - Wrapped response envelope  { data: T }
-
-private struct WrappedResponse<T: Decodable>: Decodable {
-    let data: T
 }
 
 // MARK: - APIClient
@@ -90,20 +84,24 @@ actor APIClient {
         authenticated: Bool = true
     ) async throws -> T {
         let req = try makeRequest(path: path, method: method, body: body, authenticated: authenticated)
-        let (data, response) = try await session.data(for: req)
+        let (data, response): (Data, URLResponse)
+        do {
+            (data, response) = try await session.data(for: req)
+        } catch {
+            throw mapURLError(error)
+        }
         try validate(response: response, data: data)
 
-        // Try direct decode, then wrapped in { data: ... }
-        if let direct = try? decoder.decode(T.self, from: data) {
-            return direct
-        }
-        if let wrapped = try? decoder.decode(WrappedResponse<T>.self, from: data) {
-            return wrapped.data
-        }
+        // Try direct decode first, then wrapped in { data: ... }
         do {
             return try decoder.decode(T.self, from: data)
         } catch {
-            throw APIError.decodingError(error)
+            // Try wrapped envelope
+            struct Envelope: Decodable { let data: T }
+            if let envelope = try? decoder.decode(Envelope.self, from: data) {
+                return envelope.data
+            }
+            throw APIError.decodingFailed
         }
     }
 
@@ -115,7 +113,12 @@ actor APIClient {
         authenticated: Bool = true
     ) async throws {
         let req = try makeRequest(path: path, method: method, body: body, authenticated: authenticated)
-        let (data, response) = try await session.data(for: req)
+        let (data, response): (Data, URLResponse)
+        do {
+            (data, response) = try await session.data(for: req)
+        } catch {
+            throw mapURLError(error)
+        }
         try validate(response: response, data: data)
     }
 
@@ -123,10 +126,12 @@ actor APIClient {
 
     private func validate(response: URLResponse, data: Data) throws {
         guard let http = response as? HTTPURLResponse else {
-            throw APIError.unknown(URLError(.badServerResponse))
+            throw APIError.unknown("Bad server response.")
         }
         if http.statusCode == 401 {
-            NotificationCenter.default.post(name: .apiSessionExpired, object: nil)
+            Task { @MainActor in
+                NotificationCenter.default.post(name: .apiSessionExpired, object: nil)
+            }
             throw APIError.unauthorized
         }
         guard (200..<300).contains(http.statusCode) else {
@@ -134,6 +139,24 @@ actor APIClient {
             let message = (try? JSONDecoder().decode(ErrorBody.self, from: data))?.message
                 ?? HTTPURLResponse.localizedString(forStatusCode: http.statusCode)
             throw APIError.serverError(http.statusCode, message)
+        }
+    }
+
+    // MARK: - URL error mapping
+
+    private func mapURLError(_ error: Error) -> APIError {
+        guard let urlError = error as? URLError else {
+            return .unknown("Something went wrong. Please try again.")
+        }
+        switch urlError.code {
+        case .notConnectedToInternet, .networkConnectionLost:
+            return .unknown("No internet connection. Please check your network.")
+        case .timedOut:
+            return .unknown("Request timed out. Please try again.")
+        case .cancelled:
+            return .unknown("Request was cancelled.")
+        default:
+            return .unknown("Something went wrong. Please try again.")
         }
     }
 }

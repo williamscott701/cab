@@ -12,33 +12,32 @@ final class AuthManager {
     private var sessionObserver: Any?
 
     init() {
+        // Listen for 401s from the API and auto-logout
+        let clearAction = { [weak self] in
+            self?.clearSession()
+        }
+        sessionObserver = NotificationCenter.default.addObserver(
+            forName: .apiSessionExpired,
+            object: nil,
+            queue: .main
+        ) { _ in
+            Task { @MainActor in
+                clearAction()
+            }
+        }
+
         guard let token = KeychainManager.getToken(),
               let payload = AuthManager.decodeJWTPayload(token)
-        else {
-            observeSessionExpired()
-            return
-        }
+        else { return }
 
         // Reject expired tokens
         if let exp = payload["exp"] as? Double, exp <= Date().timeIntervalSince1970 {
             KeychainManager.deleteToken()
-            observeSessionExpired()
             return
         }
 
         isLoggedIn = true
         role = payload["role"] as? String
-        observeSessionExpired()
-    }
-
-    private func observeSessionExpired() {
-        sessionObserver = NotificationCenter.default.addObserver(
-            forName: .apiSessionExpired,
-            object: nil,
-            queue: .main
-        ) { [weak self] _ in
-            self?.clearSession()
-        }
     }
 
     // MARK: - Session actions
@@ -78,7 +77,7 @@ final class AuthManager {
     // MARK: - JWT payload decoder (no third-party library)
 
     /// Decodes the payload segment of a JWT and returns it as [String: Any].
-    static func decodeJWTPayload(_ token: String) -> [String: Any]? {
+    nonisolated static func decodeJWTPayload(_ token: String) -> [String: Any]? {
         let segments = token.components(separatedBy: ".")
         guard segments.count == 3 else { return nil }
 

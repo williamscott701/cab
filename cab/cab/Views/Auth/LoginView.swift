@@ -116,18 +116,31 @@ struct LoginView: View {
                 Spacer()
             }
             .background(Color(.systemGroupedBackground))
+            .onTapGesture { UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil) }
             .navigationDestination(isPresented: $goSignup) { SignupView() }
         }
     }
 
+    private var trimmedEmail: String { email.trimmingCharacters(in: .whitespacesAndNewlines).lowercased() }
+
     private func login() async {
+        let em = trimmedEmail
+        guard !em.isEmpty, em.contains("@"), em.contains(".") else {
+            error = "Please enter a valid email address."
+            return
+        }
+        guard password.count >= 6 else {
+            error = "Password must be at least 6 characters."
+            return
+        }
+
         isLoading = true; error = nil
         defer { isLoading = false }
         do {
             struct Body: Encodable { let email, password: String }
             let r: LoginResponse = try await APIClient.shared.perform(
                 "/api/auth/login", method: "POST",
-                body: Body(email: email, password: password), authenticated: false)
+                body: Body(email: em, password: password), authenticated: false)
             authManager.login(token: r.token, user: r.user)
         } catch { self.error = error.localizedDescription }
     }

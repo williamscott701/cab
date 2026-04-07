@@ -22,4 +22,8 @@ const bookingSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
+// Indexes for query performance
+bookingSchema.index({ customerId: 1, createdAt: -1 });
+bookingSchema.index({ status: 1, createdAt: -1 });
+
 module.exports = mongoose.model('Booking', bookingSchema);
