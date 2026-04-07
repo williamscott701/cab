@@ -1,0 +1,16 @@
+# Backend
+backend/node_modules/
+backend/.env
+
+# macOS
+.DS_Store
+
+# Xcode
+xcuserdata/
+*.xccheckout
+*.moved-aside
+DerivedData/
+*.hmap
+*.ipa
+*.xcuserstate
+.build/
