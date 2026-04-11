@@ -30,10 +30,10 @@ struct BookingDetailView: View {
 
                             VStack(alignment: .leading, spacing: 2) {
                                 Text(booking.statusEnum.displayName)
-                                    .font(.subheadline.weight(.semibold))
+                                    .font(.body.weight(.semibold))
                                     .foregroundStyle(headerColor)
                                 Text(booking.formattedDate)
-                                    .font(.subheadline)
+                                    .font(.callout)
                                     .foregroundStyle(.secondary)
                             }
 

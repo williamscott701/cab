@@ -121,7 +121,7 @@ struct CabRow: View {
             VStack(alignment: .leading, spacing: 3) {
                 HStack(spacing: 6) {
                     Text(cab.driverName)
-                        .font(.subheadline.weight(.semibold))
+                        .font(.body.weight(.semibold))
                     if !cab.isActive {
                         Text("Inactive")
                             .font(.caption.weight(.bold))

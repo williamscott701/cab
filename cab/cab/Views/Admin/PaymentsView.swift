@@ -54,7 +54,7 @@ struct PaymentsView: View {
     private func revenueCard(_ cm: BookingStats.CurrentMonth) -> some View {
         VStack(spacing: 8) {
             Text(currentMonthName())
-                .font(.subheadline.weight(.medium))
+                .font(.callout.weight(.medium))
                 .foregroundStyle(.secondary)
 
             Text("₹\(Int(cm.revenue))")
@@ -62,7 +62,7 @@ struct PaymentsView: View {
                 .foregroundStyle(teal)
 
             Text("\(cm.completed) completed booking\(cm.completed == 1 ? "" : "s")")
-                .font(.subheadline)
+                .font(.callout)
                 .foregroundStyle(.secondary)
         }
         .frame(maxWidth: .infinity)
@@ -104,7 +104,7 @@ struct PaymentsView: View {
 
             if months.isEmpty {
                 Text("No completed bookings yet.")
-                    .font(.subheadline)
+                    .font(.callout)
                     .foregroundStyle(.secondary)
                     .frame(maxWidth: .infinity, alignment: .center)
                     .padding(.vertical, 20)
@@ -114,7 +114,7 @@ struct PaymentsView: View {
                         HStack {
                             VStack(alignment: .leading, spacing: 2) {
                                 Text(entry.displayMonth)
-                                    .font(.subheadline.weight(.medium))
+                                    .font(.body.weight(.medium))
                                 Text("\(entry.count) booking\(entry.count == 1 ? "" : "s")")
                                     .font(.subheadline)
                                     .foregroundStyle(.secondary)
@@ -123,7 +123,7 @@ struct PaymentsView: View {
                             Spacer()
 
                             Text("₹\(Int(entry.revenue))")
-                                .font(.subheadline.weight(.semibold).monospacedDigit())
+                                .font(.body.weight(.semibold).monospacedDigit())
                                 .foregroundStyle(teal)
                         }
                         .padding(.vertical, 12)
@@ -145,7 +145,7 @@ struct PaymentsView: View {
         HStack {
             VStack(alignment: .leading, spacing: 2) {
                 Text("All-Time Revenue")
-                    .font(.subheadline.weight(.medium))
+                    .font(.body.weight(.medium))
                 Text("\(allTime.count) completed booking\(allTime.count == 1 ? "" : "s")")
                     .font(.subheadline)
                     .foregroundStyle(.secondary)

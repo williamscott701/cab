@@ -90,7 +90,7 @@ struct RouteRow: View {
 
             VStack(alignment: .leading, spacing: 3) {
                 Text("\(route.from) → \(route.to)")
-                    .font(.subheadline.weight(.semibold))
+                    .font(.body.weight(.semibold))
 
                 if let p = priceRange {
                     Text(p)
@@ -102,10 +102,10 @@ struct RouteRow: View {
             Spacer()
 
             Button("Book", action: onBook)
-                .font(.subheadline.weight(.semibold))
+                .font(.callout.weight(.semibold))
                 .buttonStyle(.borderedProminent)
                 .buttonBorderShape(.capsule)
-                .controlSize(.small)
+                .controlSize(.regular)
         }
         .padding(.vertical, 4)
     }

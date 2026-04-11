@@ -129,9 +129,9 @@ struct AdminBookingRow: View {
                 .frame(width: 32, height: 32)
                 .background(statusColor.opacity(0.12), in: .rect(cornerRadius: 8))
 
-            VStack(alignment: .leading, spacing: 2) {
+            VStack(alignment: .leading, spacing: 3) {
                 Text(booking.customer?.name ?? "Booking")
-                    .font(.subheadline.weight(.medium))
+                    .font(.body.weight(.medium))
 
                 if let route = booking.route {
                     Text("\(route.from) → \(route.to)")

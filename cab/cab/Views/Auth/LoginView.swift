@@ -29,7 +29,7 @@ struct LoginView: View {
                     Text("Vola Cabs")
                         .font(.system(size: 32, weight: .bold, design: .rounded))
                     Text("Book your ride in seconds")
-                        .font(.subheadline)
+                        .font(.callout)
                         .foregroundStyle(.secondary)
                 }
                 .padding(.bottom, 36)
@@ -39,7 +39,7 @@ struct LoginView: View {
                     VStack(spacing: 16) {
                         VStack(alignment: .leading, spacing: 8) {
                             Text("Email")
-                                .font(.subheadline)
+                                .font(.callout)
                                 .foregroundStyle(.secondary)
                             TextField("", text: $email, prompt: Text("Enter your email").foregroundStyle(.quaternary))
                                 .keyboardType(.emailAddress)
@@ -53,7 +53,7 @@ struct LoginView: View {
 
                         VStack(alignment: .leading, spacing: 8) {
                             Text("Password")
-                                .font(.subheadline)
+                                .font(.callout)
                                 .foregroundStyle(.secondary)
                             SecureField("", text: $password, prompt: Text("Enter your password").foregroundStyle(.quaternary))
                                 .textContentType(.password)
@@ -66,7 +66,7 @@ struct LoginView: View {
                     // Error
                     if let error {
                         Text(error)
-                            .font(.subheadline)
+                            .font(.callout)
                             .foregroundStyle(.red)
                             .multilineTextAlignment(.center)
                     }
@@ -107,7 +107,7 @@ struct LoginView: View {
                                 .fontWeight(.semibold)
                                 .foregroundStyle(Color(red: 0.0, green: 0.73, blue: 0.78))
                         }
-                        .font(.subheadline)
+                        .font(.callout)
                     }
                 }
                 .padding(.horizontal, 24)

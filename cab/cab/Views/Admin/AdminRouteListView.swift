@@ -245,7 +245,7 @@ struct AdminRouteRow: View {
 
             VStack(alignment: .leading, spacing: 3) {
                 Text("\(route.from) → \(route.to)")
-                    .font(.subheadline.weight(.semibold))
+                    .font(.body.weight(.semibold))
 
                 if !priceRange.isEmpty {
                     Text(priceRange)

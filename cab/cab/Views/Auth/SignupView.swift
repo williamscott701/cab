@@ -24,7 +24,7 @@ struct SignupView: View {
                 VStack(spacing: 16) {
                     VStack(alignment: .leading, spacing: 8) {
                         Text("Full Name")
-                            .font(.subheadline)
+                            .font(.callout)
                             .foregroundStyle(.secondary)
                         TextField("", text: $name, prompt: Text("Enter your name").foregroundStyle(.quaternary))
                             .textContentType(.name)
@@ -35,7 +35,7 @@ struct SignupView: View {
 
                     VStack(alignment: .leading, spacing: 8) {
                         Text("Email")
-                            .font(.subheadline)
+                            .font(.callout)
                             .foregroundStyle(.secondary)
                         TextField("", text: $email, prompt: Text("Enter your email").foregroundStyle(.quaternary))
                             .keyboardType(.emailAddress)
@@ -49,7 +49,7 @@ struct SignupView: View {
 
                     VStack(alignment: .leading, spacing: 8) {
                         Text("Phone Number")
-                            .font(.subheadline)
+                            .font(.callout)
                             .foregroundStyle(.secondary)
                         TextField("", text: $phone, prompt: Text("10-digit mobile number").foregroundStyle(.quaternary))
                             .keyboardType(.phonePad)
@@ -61,7 +61,7 @@ struct SignupView: View {
 
                     VStack(alignment: .leading, spacing: 8) {
                         Text("Password")
-                            .font(.subheadline)
+                            .font(.callout)
                             .foregroundStyle(.secondary)
                         SecureField("", text: $password, prompt: Text("Min. 6 characters").foregroundStyle(.quaternary))
                             .textContentType(.newPassword)
@@ -73,7 +73,7 @@ struct SignupView: View {
 
                 if let error {
                     Text(error)
-                        .font(.subheadline)
+                        .font(.callout)
                         .foregroundStyle(.red)
                         .multilineTextAlignment(.center)
                 }
