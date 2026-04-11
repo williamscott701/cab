@@ -47,18 +47,6 @@ struct RouteListView: View {
                     }
                 } else {
                     List {
-                        // From filter
-                        if fromOptions.count > 2 {
-                            Section {
-                                Picker("Departure", selection: $selectedFrom) {
-                                    ForEach(fromOptions, id: \.self) { city in
-                                        Text(city).tag(city)
-                                    }
-                                }
-                                .pickerStyle(.menu)
-                            }
-                        }
-
                         if filteredRoutes.isEmpty {
                             ContentUnavailableView(
                                 "No Routes",
@@ -74,6 +62,34 @@ struct RouteListView: View {
                         }
                     }
                     .listStyle(.insetGrouped)
+                    .safeAreaInset(edge: .top, spacing: 0) {
+                        if fromOptions.count > 2 {
+                            ScrollView(.horizontal, showsIndicators: false) {
+                                HStack(spacing: 8) {
+                                    ForEach(fromOptions, id: \.self) { city in
+                                        let selected = selectedFrom == city
+                                        Button {
+                                            selectedFrom = city
+                                        } label: {
+                                            Text(city)
+                                                .font(.subheadline.weight(selected ? .semibold : .regular))
+                                                .foregroundStyle(selected ? .white : .primary)
+                                                .padding(.horizontal, 14)
+                                                .padding(.vertical, 7)
+                                                .background(
+                                                    selected ? AnyShapeStyle(Color.accentColor) : AnyShapeStyle(Color(.secondarySystemFill)),
+                                                    in: .capsule
+                                                )
+                                        }
+                                        .buttonStyle(.plain)
+                                    }
+                                }
+                                .padding(.horizontal, 16)
+                                .padding(.vertical, 10)
+                            }
+                            .background(.bar)
+                        }
+                    }
                 }
             }
             .navigationTitle("Routes")
