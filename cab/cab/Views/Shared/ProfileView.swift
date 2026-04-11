@@ -92,10 +92,8 @@ struct ProfileView: View {
                         }
                     }
                     .disabled(isLoggingOut || isDeleting)
-                }
 
-                if authManager.role == "customer" {
-                    Section {
+                    if authManager.role == "customer" {
                         Button(role: .destructive) {
                             showDeleteConfirm = true
                         } label: {
