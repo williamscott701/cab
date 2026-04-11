@@ -30,94 +30,101 @@ struct RouteListView: View {
 
     var body: some View {
         NavigationStack {
-            Group {
-                if isLoading {
-                    ProgressView()
-                        .frame(maxWidth: .infinity, maxHeight: .infinity)
-                } else if let error {
-                    ContentUnavailableView {
-                        Label("Couldn't Load", systemImage: "wifi.slash")
-                    } description: {
-                        Text(error)
-                    } actions: {
-                        Button("Retry") { Task { await load() } }
-                            .buttonStyle(.borderedProminent)
-                            .buttonBorderShape(.capsule)
-                            .controlSize(.small)
-                    }
+            content
+                .navigationTitle("Routes")
+                .task { await load() }
+                .refreshable { await load() }
+                .sheet(item: $selectedRoute) { BookingFormView(route: $0) }
+        }
+    }
+
+    @ViewBuilder
+    private var content: some View {
+        if isLoading {
+            ProgressView()
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+        } else if let error {
+            ContentUnavailableView {
+                Label("Couldn't Load", systemImage: "wifi.slash")
+            } description: {
+                Text(error)
+            } actions: {
+                Button("Retry") { Task { await load() } }
+                    .buttonStyle(.borderedProminent)
+                    .buttonBorderShape(.capsule)
+                    .controlSize(.small)
+            }
+        } else {
+            List {
+                Section {
+                    searchFilterRow
+                }
+                .listRowInsets(EdgeInsets(top: 8, leading: 16, bottom: 8, trailing: 16))
+                .listRowBackground(Color.clear)
+
+                if filteredRoutes.isEmpty {
+                    Text("No routes match your search.")
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                        .frame(maxWidth: .infinity, alignment: .center)
+                        .padding(.vertical, 24)
+                        .listRowBackground(Color.clear)
                 } else {
-                    List {
-                        // Search + departure filter on one line
-                        Section {
-                            HStack(spacing: 8) {
-                                HStack(spacing: 6) {
-                                    Image(systemName: "magnifyingglass")
-                                        .foregroundStyle(.secondary)
-                                    TextField("Search destination", text: $searchText)
-                                        .autocorrectionDisabled()
-                                }
-                                .padding(.horizontal, 10)
-                                .padding(.vertical, 8)
-                                .background(Color(.tertiarySystemFill), in: .rect(cornerRadius: 10))
-
-                                if fromOptions.count > 2 {
-                                    Menu {
-                                        ForEach(fromOptions, id: \.self) { city in
-                                            Button {
-                                                selectedFrom = city
-                                            } label: {
-                                                if selectedFrom == city {
-                                                    Label(city, systemImage: "checkmark")
-                                                } else {
-                                                    Text(city)
-                                                }
-                                            }
-                                        }
-                                    } label: {
-                                        HStack(spacing: 4) {
-                                            Text(selectedFrom == "All" ? "Departure" : selectedFrom)
-                                                .lineLimit(1)
-                                            Image(systemName: "chevron.down")
-                                                .font(.system(size: 11, weight: .semibold))
-                                        }
-                                        .font(.subheadline.weight(.medium))
-                                        .foregroundStyle(selectedFrom == "All" ? .secondary : .tint)
-                                        .padding(.horizontal, 10)
-                                        .padding(.vertical, 8)
-                                        .background(
-                                            selectedFrom == "All"
-                                                ? Color(.tertiarySystemFill)
-                                                : Color.accentColor.opacity(0.12),
-                                            in: .rect(cornerRadius: 10)
-                                        )
-                                    }
-                                }
-                            }
-                            .listRowInsets(EdgeInsets(top: 8, leading: 16, bottom: 8, trailing: 16))
-                            .listRowBackground(Color.clear)
-                        }
-
-                        if filteredRoutes.isEmpty {
-                            ContentUnavailableView(
-                                "No Routes",
-                                systemImage: "map",
-                                description: Text("No routes match your search.")
-                            )
-                            .listRowBackground(Color.clear)
-                        } else {
-                            ForEach(filteredRoutes) { route in
-                                RouteRow(route: route) { selectedRoute = route }
-                                    .listRowInsets(EdgeInsets(top: 6, leading: 16, bottom: 6, trailing: 16))
-                            }
-                        }
+                    ForEach(filteredRoutes) { route in
+                        RouteRow(route: route) { selectedRoute = route }
+                            .listRowInsets(EdgeInsets(top: 6, leading: 16, bottom: 6, trailing: 16))
                     }
-                    .listStyle(.insetGrouped)
                 }
             }
-            .navigationTitle("Routes")
-            .task { await load() }
-            .refreshable { await load() }
-            .sheet(item: $selectedRoute) { BookingFormView(route: $0) }
+            .listStyle(.insetGrouped)
+        }
+    }
+
+    @ViewBuilder
+    private var searchFilterRow: some View {
+        HStack(spacing: 8) {
+            HStack(spacing: 6) {
+                Image(systemName: "magnifyingglass")
+                    .foregroundStyle(.secondary)
+                TextField("Search destination", text: $searchText)
+                    .autocorrectionDisabled()
+            }
+            .padding(.horizontal, 10)
+            .padding(.vertical, 8)
+            .background(Color(.tertiarySystemFill), in: .rect(cornerRadius: 10))
+
+            if fromOptions.count > 2 {
+                Menu {
+                    ForEach(fromOptions, id: \.self) { city in
+                        Button {
+                            selectedFrom = city
+                        } label: {
+                            if selectedFrom == city {
+                                Label(city, systemImage: "checkmark")
+                            } else {
+                                Text(city)
+                            }
+                        }
+                    }
+                } label: {
+                    HStack(spacing: 4) {
+                        Text(selectedFrom == "All" ? "Departure" : selectedFrom)
+                            .lineLimit(1)
+                        Image(systemName: "chevron.down")
+                            .font(.system(size: 11, weight: .semibold))
+                    }
+                    .font(.subheadline.weight(.medium))
+                    .foregroundStyle(selectedFrom == "All" ? AnyShapeStyle(.secondary) : AnyShapeStyle(.tint))
+                    .padding(.horizontal, 10)
+                    .padding(.vertical, 8)
+                    .background(
+                        selectedFrom == "All"
+                            ? Color(.tertiarySystemFill)
+                            : Color.accentColor.opacity(0.12),
+                        in: .rect(cornerRadius: 10)
+                    )
+                }
+            }
         }
     }
 
