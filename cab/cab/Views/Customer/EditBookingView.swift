@@ -46,13 +46,11 @@ struct EditBookingView: View {
                             VStack(alignment: .leading, spacing: 1) {
                                 Text(route.from)
                                     .font(.headline)
-                                HStack(spacing: 4) {
-                                    Image(systemName: "arrow.down")
-                                        .font(.system(size: 10, weight: .semibold))
-                                        .foregroundStyle(.tertiary)
-                                    Text(route.to)
-                                        .font(.headline)
-                                }
+                                    .lineLimit(1)
+                                Text(route.to)
+                                    .font(.headline)
+                                    .lineLimit(1)
+                                    .foregroundStyle(.secondary)
                             }
 
                             Spacer()

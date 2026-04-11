@@ -123,13 +123,11 @@ struct RouteRow: View {
             VStack(alignment: .leading, spacing: 1) {
                 Text(route.from)
                     .font(.body.weight(.semibold))
-                HStack(spacing: 4) {
-                    Image(systemName: "arrow.down")
-                        .font(.system(size: 10, weight: .semibold))
-                        .foregroundStyle(.tertiary)
-                    Text(route.to)
-                        .font(.body.weight(.semibold))
-                }
+                    .lineLimit(1)
+                Text(route.to)
+                    .font(.body.weight(.semibold))
+                    .lineLimit(1)
+                    .foregroundStyle(.secondary)
                 if let p = priceRange {
                     Text(p)
                         .font(.subheadline.weight(.medium))
