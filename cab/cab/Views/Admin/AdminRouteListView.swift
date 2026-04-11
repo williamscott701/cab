@@ -122,8 +122,17 @@ struct RouteDetailView: View {
                         .frame(width: 56, height: 56)
                         .background(Color(red: 0.0, green: 0.73, blue: 0.78).opacity(0.12), in: .circle)
 
-                    Text("\(route.from) → \(route.to)")
-                        .font(.headline)
+                    VStack(spacing: 2) {
+                        Text(route.from)
+                            .font(.headline)
+                        HStack(spacing: 4) {
+                            Image(systemName: "arrow.down")
+                                .font(.system(size: 11, weight: .semibold))
+                                .foregroundStyle(.tertiary)
+                            Text(route.to)
+                                .font(.headline)
+                        }
+                    }
                 }
                 .frame(maxWidth: .infinity)
                 .padding(.vertical, 8)
@@ -243,14 +252,21 @@ struct AdminRouteRow: View {
                 .frame(width: 42, height: 42)
                 .background(Color(red: 0.0, green: 0.73, blue: 0.78).opacity(0.12), in: .rect(cornerRadius: 10))
 
-            VStack(alignment: .leading, spacing: 3) {
-                Text("\(route.from) → \(route.to)")
+            VStack(alignment: .leading, spacing: 1) {
+                Text(route.from)
                     .font(.body.weight(.semibold))
-
+                HStack(spacing: 4) {
+                    Image(systemName: "arrow.down")
+                        .font(.system(size: 10, weight: .semibold))
+                        .foregroundStyle(.tertiary)
+                    Text(route.to)
+                        .font(.body.weight(.semibold))
+                }
                 if !priceRange.isEmpty {
                     Text(priceRange)
                         .font(.subheadline.weight(.medium))
                         .foregroundStyle(.tint)
+                        .padding(.top, 1)
                 }
             }
         }

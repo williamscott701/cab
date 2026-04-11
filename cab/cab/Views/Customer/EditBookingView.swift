@@ -43,8 +43,17 @@ struct EditBookingView: View {
                                 .frame(width: 42, height: 42)
                                 .background(Color(red: 0.0, green: 0.73, blue: 0.78).opacity(0.12), in: .rect(cornerRadius: 10))
 
-                            Text("\(route.from) → \(route.to)")
-                                .font(.headline)
+                            VStack(alignment: .leading, spacing: 1) {
+                                Text(route.from)
+                                    .font(.headline)
+                                HStack(spacing: 4) {
+                                    Image(systemName: "arrow.down")
+                                        .font(.system(size: 10, weight: .semibold))
+                                        .foregroundStyle(.tertiary)
+                                    Text(route.to)
+                                        .font(.headline)
+                                }
+                            }
 
                             Spacer()
 

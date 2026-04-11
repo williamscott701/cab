@@ -138,6 +138,7 @@ struct AdminBookingRow: View {
                         .font(.subheadline)
                         .foregroundStyle(.secondary)
                         .lineLimit(1)
+                        .truncationMode(.tail)
                 }
 
                 HStack(spacing: 8) {

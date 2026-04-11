@@ -61,6 +61,7 @@ struct BookingRow: View {
                 if let route = booking.route {
                     Text("\(route.from) → \(route.to)")
                         .font(.body.weight(.medium))
+                        .lineLimit(1)
                 } else {
                     Text("Booking")
                         .font(.body.weight(.medium))
