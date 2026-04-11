@@ -47,6 +47,56 @@ struct RouteListView: View {
                     }
                 } else {
                     List {
+                        // Search + departure filter on one line
+                        Section {
+                            HStack(spacing: 8) {
+                                HStack(spacing: 6) {
+                                    Image(systemName: "magnifyingglass")
+                                        .foregroundStyle(.secondary)
+                                    TextField("Search destination", text: $searchText)
+                                        .autocorrectionDisabled()
+                                }
+                                .padding(.horizontal, 10)
+                                .padding(.vertical, 8)
+                                .background(Color(.tertiarySystemFill), in: .rect(cornerRadius: 10))
+
+                                if fromOptions.count > 2 {
+                                    Menu {
+                                        ForEach(fromOptions, id: \.self) { city in
+                                            Button {
+                                                selectedFrom = city
+                                            } label: {
+                                                if selectedFrom == city {
+                                                    Label(city, systemImage: "checkmark")
+                                                } else {
+                                                    Text(city)
+                                                }
+                                            }
+                                        }
+                                    } label: {
+                                        HStack(spacing: 4) {
+                                            Text(selectedFrom == "All" ? "Departure" : selectedFrom)
+                                                .lineLimit(1)
+                                            Image(systemName: "chevron.down")
+                                                .font(.system(size: 11, weight: .semibold))
+                                        }
+                                        .font(.subheadline.weight(.medium))
+                                        .foregroundStyle(selectedFrom == "All" ? .secondary : .tint)
+                                        .padding(.horizontal, 10)
+                                        .padding(.vertical, 8)
+                                        .background(
+                                            selectedFrom == "All"
+                                                ? Color(.tertiarySystemFill)
+                                                : Color.accentColor.opacity(0.12),
+                                            in: .rect(cornerRadius: 10)
+                                        )
+                                    }
+                                }
+                            }
+                            .listRowInsets(EdgeInsets(top: 8, leading: 16, bottom: 8, trailing: 16))
+                            .listRowBackground(Color.clear)
+                        }
+
                         if filteredRoutes.isEmpty {
                             ContentUnavailableView(
                                 "No Routes",
@@ -62,38 +112,9 @@ struct RouteListView: View {
                         }
                     }
                     .listStyle(.insetGrouped)
-                    .safeAreaInset(edge: .top, spacing: 0) {
-                        if fromOptions.count > 2 {
-                            ScrollView(.horizontal, showsIndicators: false) {
-                                HStack(spacing: 8) {
-                                    ForEach(fromOptions, id: \.self) { city in
-                                        let selected = selectedFrom == city
-                                        Button {
-                                            selectedFrom = city
-                                        } label: {
-                                            Text(city)
-                                                .font(.subheadline.weight(selected ? .semibold : .regular))
-                                                .foregroundStyle(selected ? .white : .primary)
-                                                .padding(.horizontal, 14)
-                                                .padding(.vertical, 7)
-                                                .background(
-                                                    selected ? AnyShapeStyle(Color.accentColor) : AnyShapeStyle(Color(.secondarySystemFill)),
-                                                    in: .capsule
-                                                )
-                                        }
-                                        .buttonStyle(.plain)
-                                    }
-                                }
-                                .padding(.horizontal, 16)
-                                .padding(.vertical, 10)
-                            }
-                            .background(.bar)
-                        }
-                    }
                 }
             }
             .navigationTitle("Routes")
-            .searchable(text: $searchText, prompt: "Search destination")
             .task { await load() }
             .refreshable { await load() }
             .sheet(item: $selectedRoute) { BookingFormView(route: $0) }
