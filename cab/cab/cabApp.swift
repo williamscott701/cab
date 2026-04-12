@@ -1,7 +1,7 @@
 import SwiftUI
 
 @main
-struct cabApp: App {
+struct VolaCabsApp: App {
 
     @State private var authManager = AuthManager()
 
