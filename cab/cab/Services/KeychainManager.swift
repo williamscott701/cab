@@ -3,7 +3,7 @@ import Security
 
 enum KeychainManager {
 
-    private static let service = "paka.volacabs"
+    private static let service = "paka.VolaCabs"
     private static let account = "authToken"
 
     static func saveToken(_ token: String) {
