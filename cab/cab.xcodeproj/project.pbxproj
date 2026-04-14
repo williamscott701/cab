@@ -7,7 +7,7 @@
 	objects = {
 
 /* Begin PBXFileReference section */
-		371949122F851D1000CCEB10 /* cab.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = cab.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		371949122F851D1000CCEB10 /* cab.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; name = cab.app; path = VolaCabs.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -48,9 +48,9 @@
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
-		371949112F851D1000CCEB10 /* cab */ = {
+		371949112F851D1000CCEB10 /* VolaCabs */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = 3719491D2F851D1200CCEB10 /* Build configuration list for PBXNativeTarget "cab" */;
+			buildConfigurationList = 3719491D2F851D1200CCEB10 /* Build configuration list for PBXNativeTarget "VolaCabs" */;
 			buildPhases = (
 				3719490E2F851D1000CCEB10 /* Sources */,
 				3719490F2F851D1000CCEB10 /* Frameworks */,
@@ -63,10 +63,10 @@
 			fileSystemSynchronizedGroups = (
 				371949142F851D1000CCEB10 /* cab */,
 			);
-			name = cab;
+			name = VolaCabs;
 			packageProductDependencies = (
 			);
-			productName = cab;
+			productName = VolaCabs;
 			productReference = 371949122F851D1000CCEB10 /* cab.app */;
 			productType = "com.apple.product-type.application";
 		};
@@ -99,7 +99,7 @@
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
-				371949112F851D1000CCEB10 /* cab */,
+				371949112F851D1000CCEB10 /* VolaCabs */,
 			);
 		};
 /* End PBXProject section */
@@ -267,8 +267,8 @@
 					"@executable_path/Frameworks",
 				);
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = paka.VolaCabs;
-				PRODUCT_NAME = "$(TARGET_NAME)";
+				PRODUCT_BUNDLE_IDENTIFIER = com.volacabs.app;
+				PRODUCT_NAME = VolaCabs;
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_APPROACHABLE_CONCURRENCY = YES;
 				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
@@ -300,8 +300,8 @@
 					"@executable_path/Frameworks",
 				);
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = paka.VolaCabs;
-				PRODUCT_NAME = "$(TARGET_NAME)";
+				PRODUCT_BUNDLE_IDENTIFIER = com.volacabs.app;
+				PRODUCT_NAME = VolaCabs;
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_APPROACHABLE_CONCURRENCY = YES;
 				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
@@ -324,7 +324,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		3719491D2F851D1200CCEB10 /* Build configuration list for PBXNativeTarget "cab" */ = {
+		3719491D2F851D1200CCEB10 /* Build configuration list for PBXNativeTarget "VolaCabs" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				3719491E2F851D1200CCEB10 /* Debug */,
